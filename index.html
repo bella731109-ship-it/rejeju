@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta http-equiv="Cache-Control" content="no-cache" />
+<meta name="theme-color" content="#FFFCF6" />
+<meta name="apple-mobile-web-app-title" content="JEJU" />
+<link rel="apple-touch-icon" href="icon.png" />
+<link rel="icon" type="image/png" href="icon.png" />
+<link rel="manifest" href="manifest.webmanifest" />
+<title>濟州島旅行手帳 2026</title>
+
+<!-- 字型：日系圓體 -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Huninn&family=Zen+Maru+Gothic:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+<!-- Tailwind / Vue 3 / SortableJS（拖曳排序） -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#3E3A39',      // 主文字＋外框：深咖啡
+          sub: '#7A716B',      // 次文字
+          line: '#3E3A39',     // 外框線
+          paper: '#FFFCF6',    // 紙張白
+          cream: '#FFF3D6',    // 淡黃
+          honey: '#F2A497',    // 主色：珊瑚
+          amber: '#C2410C',    // 強調文字
+        },
+        fontFamily: {
+          maru: ['"Huninn"', '"Zen Maru Gothic"', '"Noto Sans TC"', 'sans-serif'],
+          sans: ['"Huninn"', '"Noto Sans TC"', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  /* ========= 全域 ========= */
+  :root {
+    --bg: #FFFCF6;         /* 會自動被 banner.png 的底色覆蓋 */
+    --honey: #E8B65A;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  html, body { background: var(--bg); transition: background-color .6s ease; }
+  body {
+    font-family: "Noto Sans TC", "Zen Maru Gothic", sans-serif;
+    color: #5B4A36;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+  [v-cloak] { display: none; }
+  .font-maru { font-family: "Zen Maru Gothic", "Noto Sans TC", sans-serif; }
+
+  /* 隱藏橫向捲軸，保留滑動 */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* 卡片：柔和陰影 */
+  .soft-card {
+    background: #fff;
+    border: 1px solid #F3EAD6;
+    box-shadow: 0 6px 18px -10px rgba(140, 105, 50, .25);
+  }
+  .press { transition: transform .15s ease, box-shadow .15s ease; }
+  .press:active { transform: scale(.97); }
+
+  /* 拖曳中的樣式 */
+  .sortable-ghost { opacity: .35; }
+  .sortable-chosen .soft-card { box-shadow: 0 16px 30px -12px rgba(140,105,50,.45); }
+
+  /* 交通虛線 */
+  .dash-line { background-image: linear-gradient(#E3D3B0 50%, transparent 0); background-size: 2px 7px; width: 2px; }
+
+  /* 登機證鋸齒 */
+  .ticket-cut { position: relative; }
+  .ticket-cut::before, .ticket-cut::after {
+    content: ""; position: absolute; top: 50%; width: 18px; height: 18px; border-radius: 50%;
+    background: #FFFDF7; transform: translateY(-50%);
+  }
+  .ticket-cut::before { left: -9px; }
+  .ticket-cut::after { right: -9px; }
+
+  /* 底部彈出視窗動畫 */
+  .sheet-enter-active, .sheet-leave-active { transition: opacity .25s ease; }
+  .sheet-enter-active .sheet-body, .sheet-leave-active .sheet-body { transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+  .sheet-enter-from, .sheet-leave-to { opacity: 0; }
+  .sheet-enter-from .sheet-body, .sheet-leave-to .sheet-body { transform: translateY(100%); }
+
+  .fade-enter-active, .fade-leave-active { transition: opacity .2s ease, transform .2s ease; }
+  .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(6px); }
+
+  /* 表單 */
+  .field { width: 100%; background: #FBF7EC; border: 1px solid #F0E5CB; border-radius: 14px; padding: 11px 14px; font-size: 15px; color: #5B4A36; outline: none; }
+  .field:focus { border-color: #E8B65A; background: #fff; }
+  .label { display:block; font-size: 12px; color: #9C8B74; margin: 0 0 6px 4px; letter-spacing: .05em; }
+  select.field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239C8B74' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; }
+
+  summary::-webkit-details-marker { display: none; }
+  .fab { box-shadow: 0 10px 24px -8px rgba(201, 142, 59, .7); }
+
+  /* ================= 手繪貼紙風主題 ================= */
+  :root { --ink:#3E3A39; --paper:#FFFCF6; --coral:#F2A497; --yellow:#F6D27A; --water:#A8D3E6; --bamboo:#B9DAA5; --line:3px solid var(--ink); }
+  body, .font-maru { font-family: "Huninn", "Zen Maru Gothic", "Noto Sans TC", sans-serif !important; color: var(--ink); }
+  .font-bold { font-weight: 400 !important; }   /* Huninn 只有一種粗細，用外框表現層次 */
+  .soft-card { background: var(--paper) !important; border: var(--line) !important; box-shadow: none !important; }
+  .ink-b { border: 2.5px solid var(--ink) !important; }
+  .ink-b3 { border: var(--line) !important; }
+  .press:active { transform: translateY(2px) scale(.98); }
+  main.sheet-main { border: var(--line); border-bottom: none; box-shadow: none !important; }
+  .field { border: 2.5px solid var(--ink) !important; background: #fff !important; border-radius: 16px; }
+  .field:focus { background: #FFFBEF !important; outline: 3px dashed var(--ink); outline-offset: 2px; }
+  .fab { border: var(--line); box-shadow: 0 4px 0 var(--ink) !important; }
+  .fab:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink) !important; }
+  .dash-line { background-image: linear-gradient(var(--ink) 50%, transparent 0) !important; background-size: 3px 8px !important; width: 3px !important; }
+  .flight-card { background: var(--yellow); color: var(--ink); border: var(--line); }
+  .total-card { background: var(--coral); color: var(--ink); border: var(--line); }
+  .sun-card { background: #FFF1C9; color: var(--ink); border: 2.5px solid var(--ink); }
+  .sheet-body { border: var(--line); border-bottom: none; }
+  .date-on { transform: translateY(-3px); }
+  .ticket-cut::before, .ticket-cut::after { background: var(--paper); border: var(--line); }
+  @keyframes pop { 0%{opacity:0;transform:translateY(18px) scale(.96)} 60%{opacity:1;transform:translateY(-6px) scale(1.02)} 80%{transform:translateY(2px) scale(.995)} 100%{opacity:1;transform:none} }
+  .bounce > div { animation: pop .55s cubic-bezier(.3,1.4,.5,1) both; }
+  .bounce > div:nth-child(2){animation-delay:.04s} .bounce > div:nth-child(3){animation-delay:.08s} .bounce > div:nth-child(4){animation-delay:.12s} .bounce > div:nth-child(5){animation-delay:.16s} .bounce > div:nth-child(n+6){animation-delay:.2s}
+  @media (prefers-reduced-motion: reduce) { .bounce > div { animation: none; } }
+</style>
+</head>
+
+<body>
+<div id="app" v-cloak class="min-h-screen">
+  <div class="relative mx-auto max-w-[480px] min-h-screen">
+
+    <!-- ================= 頁首 Banner ================= -->
+    <header class="relative w-full h-[250px] overflow-hidden" :style="{ background: 'var(--bg)' }">
+      <!-- 優先使用動態插畫 banner.svg，找不到再用 banner.png -->
+      <img v-if="!bannerError" ref="bannerImg" :src="bannerSrc" alt="banner"
+           class="absolute inset-0 w-full h-full object-cover"
+           @load="onBannerLoad" @error="onBannerError" />
+      <!-- 找不到 banner.png 時的備用插畫底 -->
+      <div v-else class="absolute inset-0 bg-gradient-to-br from-[#FCEFC7] via-[#F8E3B0] to-[#F3D38E]">
+        <div class="absolute right-8 top-10 w-20 h-20 rounded-full bg-[#FFF6DA]/80"></div>
+        <div class="absolute left-6 top-16 font-maru text-[#8A6A3A]">
+          <p class="text-xs tracking-[.3em]">JEJU ISLAND</p>
+          <p class="text-2xl font-bold mt-1">濟州島 旅行手帳</p>
+        </div>
+      </div>
+
+      <!-- 分頁 ICON：浮在圖片右下方 -->
+      <nav class="absolute right-4 bottom-12 z-20 flex items-center gap-1 p-1.5 rounded-full bg-paper/90 backdrop-blur-md ink-b3">
+        <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)"
+                class="w-10 h-10 rounded-full grid place-items-center transition-all press ink-b"
+                :class="tab === t.key ? 'bg-honey text-ink ink-b' : 'text-ink'"
+                :aria-label="t.label">
+          <span v-html="icon(t.icon, 'w-[20px] h-[20px]')"></span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- ================= 主內容：圓弧白底，負邊距上拉重疊 ================= -->
+    <main class="sheet-main relative z-10 -mt-8 rounded-t-[32px] bg-paper min-h-[calc(100vh-218px)] pt-6 pb-32 shadow-[0_-10px_30px_-20px_rgba(120,90,40,.4)]">
+
+      <!-- ============ 1. 每日行程表 ============ -->
+      <section v-if="tab === 'plan'">
+        <!-- 倒數計時 -->
+        <div class="px-5 mb-5">
+          <div class="soft-card rounded-[26px] px-4 pt-4 pb-3.5 text-center">
+            <span class="inline-block text-[12px] px-3 py-0.5 rounded-full bg-[#B9DAA5] ink-b">2026・冬天的島嶼旅行</span>
+            <p class="font-maru text-[26px] leading-tight mt-2 tracking-wide">濟州島 7天6夜</p>
+            <p class="text-[13px] text-sub mt-0.5">11/28（六）→ 12/4（五）・繞島一圈的慢慢旅行</p>
+            <div v-if="cd.mode === 'before'" class="grid grid-cols-4 gap-2 mt-3.5">
+              <div v-for="b in cdBoxes" :key="b.u" class="ink-b3 rounded-[18px] pt-1.5 pb-1" :style="{ background: b.bg }">
+                <div class="font-maru text-[28px] leading-none tabular-nums pt-1">{{ b.v }}</div>
+                <div class="text-[11px] mt-1">{{ b.u }}</div>
+              </div>
+            </div>
+            <p class="mt-3 text-[13px]" :class="cd.mode !== 'before' && 'font-maru text-[17px] mt-3.5'">{{ cd.label }}</p>
+          </div>
+        </div>
+
+        <div class="px-5 flex items-end justify-between">
+          <div>
+            <p class="text-[11px] tracking-[.3em] text-sub">ITINERARY</p>
+            <h1 class="font-maru text-xl font-bold mt-0.5">每日行程</h1>
+          </div>
+          <!-- 分類下拉 -->
+          <div class="relative">
+            <select v-model="catFilter" class="field !py-2 !text-sm !rounded-full !bg-cream !border-transparent">
+              <option value="全部">全部分類</option>
+              <option v-for="c in CATS" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 日期選單：橫向滑動 -->
+        <div ref="dateBar" class="mt-4 flex gap-2.5 overflow-x-auto no-scrollbar px-5 pb-2 snap-x">
+          <button v-for="(d, i) in DATES" :key="d" @click="selectDate(d)"
+                  class="snap-start shrink-0 w-[58px] py-2.5 rounded-[20px] flex flex-col items-center press transition-all ink-b3"
+                  :class="d === curDate ? 'bg-honey text-ink date-on' : 'bg-paper text-ink'">
+            <span class="font-maru text-[17px] font-bold leading-tight">{{ weekday(d) }}</span>
+            <span class="text-[12px] mt-0.5" :class="d === curDate ? 'text-ink/70' : 'text-sub'">{{ dayNum(d) }}</span>
+          </button>
+        </div>
+
+        <!-- Day 標題 -->
+        <div class="px-5 mt-3 flex items-center gap-2 text-sm text-sub">
+          <span class="px-2.5 py-0.5 rounded-full bg-[#F6EBD0] text-amber font-maru font-bold text-xs">DAY {{ DATES.indexOf(curDate) + 1 }}</span>
+          <span>{{ fmtFull(curDate) }}</span>
+          <span v-if="hotelTonight(curDate)" class="ml-auto flex items-center gap-1 text-xs truncate max-w-[45%]">
+            <span v-html="icon('bed','w-3.5 h-3.5')"></span>{{ hotelTonight(curDate).short }}
+          </span>
+        </div>
+        <div class="px-5 mt-3">
+          <button @click="nearbyMatjip" class="w-full flex items-center gap-3 px-4 py-3 rounded-[20px] bg-[#B9DAA5] text-ink press ink-b3">
+            <span class="w-9 h-9 rounded-full bg-white/20 grid place-items-center" v-html="icon('food','w-5 h-5')"></span>
+            <span class="text-left flex-1">
+              <span class="block font-maru font-bold text-[15px]">我附近的 맛집</span>
+              <span class="block text-[11px] opacity-90">{{ locating ? '定位中…' : '用目前位置在 Naver Map 找在地餐廳' }}</span>
+            </span>
+            <span v-html="icon('nav','w-4 h-4')"></span>
+          </button>
+          <div class="mt-2 flex gap-1.5 overflow-x-auto no-scrollbar">
+            <span class="shrink-0 self-center text-[11px] text-sub mr-0.5">我附近的</span>
+            <button v-for="n in NEAR_ME" :key="n.key" @click="searchNearMe(n)"
+                    class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold press ink-b" :style="{ background: n.bg, color: n.color }">
+              <span>{{ n.emoji }}</span>{{ n.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 天氣資訊 -->
+        <div class="px-5 mt-3">
+          <div class="soft-card rounded-[22px] px-4 py-3.5 flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl grid place-items-center"
+                 :class="{ 'bg-[#FFF1CC] text-[#E9A23B]': curWeather.kind==='sun', 'bg-[#EEF0F2] text-[#8C98A4]': curWeather.kind==='cloud', 'bg-[#E6EFF6] text-[#6C93B5]': curWeather.kind==='rain', 'bg-[#EEF4FA] text-[#8FB2D1]': curWeather.kind==='snow' }">
+              <span v-html="icon(curWeather.kind, 'w-7 h-7')"></span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-maru text-2xl font-bold">{{ curWeather.temp }}</span>
+                <span class="text-xs text-sub">體感 {{ curWeather.feel }}</span>
+              </div>
+              <p class="text-[11px] text-sub mt-0.5 truncate">{{ curWeather.label }}</p>
+            </div>
+            <span class="text-[11px] text-sub text-right leading-tight">{{ curWeather.place }}<br />{{ curWeather.desc }}</span>
+          </div>
+
+          <!-- 今日穿搭 -->
+          <details class="soft-card rounded-[22px] px-4 py-3.5 mt-3 group" open>
+            <summary class="list-none flex items-center gap-2 cursor-pointer">
+              <span class="w-8 h-8 rounded-xl bg-[#F9E5E9] text-[#D88C9A] grid place-items-center" v-html="icon('shirt','w-[18px] h-[18px]')"></span>
+              <span class="font-maru font-bold text-[15px]">今日穿搭</span>
+              <span class="text-[11px] text-sub">體感最低約 {{ outfit.feel }}°</span>
+              <span class="ml-auto text-sub transition-transform group-open:rotate-180" v-html="icon('chev','w-4 h-4')"></span>
+            </summary>
+            <div class="mt-3 flex flex-wrap items-center gap-1.5">
+              <template v-for="(x, i) in outfit.layers" :key="x">
+                <span class="px-2.5 py-1 rounded-full bg-cream text-[12px]">{{ x }}</span>
+                <span v-if="i < outfit.layers.length - 1" class="text-[#D9CBAF] text-xs">＋</span>
+              </template>
+            </div>
+            <ul class="mt-3 space-y-1.5 text-[12px] text-ink/80 leading-relaxed">
+              <li v-for="t in outfit.tips" :key="t" class="flex gap-1.5"><span class="text-honey">•</span><span>{{ t }}</span></li>
+            </ul>
+            <p class="mt-2 text-[10px] text-sub">{{ outfit.source }}</p>
+          </details>
+        </div>
+
+        <!-- 行程列表 -->
+        <div class="px-5 mt-4">
+          <p v-if="catFilter !== '全部'" class="text-xs text-sub mb-2">篩選中：只顯示「{{ catFilter }}」，暫停拖曳與交通計算</p>
+          <div v-if="!visibleItems.length" class="text-center py-14 text-sub text-sm">
+            <div class="mx-auto w-14 h-14 rounded-full bg-cream grid place-items-center mb-3" v-html="icon('pin','w-6 h-6')"></div>
+            這天還沒有行程，點右下角 ＋ 新增
+          </div>
+
+          <div ref="listEl" :key="curDate + catFilter" class="bounce">
+            <div v-for="(item, idx) in visibleItems" :key="item.id" :data-id="item.id">
+
+              <!-- 交通時間 -->
+              <div v-if="catFilter==='全部' && segments[idx]" class="flex items-stretch gap-3 pl-[22px] -my-0.5">
+                <div class="dash-line"></div>
+                <button @click="cycleMode(item)" class="my-2 flex items-center gap-1.5 text-[12px] text-sub px-2.5 py-1 rounded-full bg-[#FBF5E6] press ink-b">
+                  <span v-html="icon(segments[idx].icon,'w-4 h-4 text-amber')"></span>
+                  <span>{{ segments[idx].text }}</span>
+                  <span v-if="segments[idx].from" class="text-[10px] opacity-75">· 從{{ segments[idx].from }}</span>
+                </button>
+              </div>
+              <div v-else-if="catFilter==='全部' && idx>0" class="h-3"></div>
+
+              <!-- 航班卡片（特別樣式） -->
+              <div v-if="item.cat === '航班'" class="relative">
+                <div class="rounded-[24px] overflow-hidden flight-card press" @click="openNaver(flightOf(item).navQuery)">
+                  <div class="px-5 pt-4 flex items-center justify-between text-[12px] tracking-wider">
+                    <span class="flex items-center gap-1.5"><span v-html="icon('plane','w-4 h-4')"></span>{{ flightOf(item).dir }} · {{ flightOf(item).airline }}</span>
+                    <span class="font-maru font-bold">{{ flightOf(item).code }}</span>
+                  </div>
+                  <div class="px-5 pt-3 pb-4 flex items-center">
+                    <div class="text-left">
+                      <p class="font-maru text-[30px] font-bold leading-none">{{ flightOf(item).from }}</p>
+                      <p class="text-[11px] opacity-90 mt-1">{{ flightOf(item).fromName }}</p>
+                      <p class="font-maru text-lg font-bold mt-1">{{ flightOf(item).dep }}</p>
+                    </div>
+                    <div class="flex-1 px-3 flex flex-col items-center">
+                      <span class="text-[11px] opacity-90">{{ flightOf(item).duration }}</span>
+                      <div class="w-full flex items-center gap-1 my-1">
+                        <span class="flex-1 border-t border-dashed border-ink/60"></span>
+                        <span v-html="icon('plane','w-4 h-4 rotate-90')"></span>
+                        <span class="flex-1 border-t border-dashed border-ink/60"></span>
+                      </div>
+                      <span class="text-[11px] opacity-90">{{ flightOf(item).date }}</span>
+                    </div>
+                    <div class="text-right">
+                      <p class="font-maru text-[30px] font-bold leading-none">{{ flightOf(item).to }}</p>
+                      <p class="text-[11px] opacity-90 mt-1">{{ flightOf(item).toName }}</p>
+                      <p class="font-maru text-lg font-bold mt-1">{{ flightOf(item).arr }}</p>
+                    </div>
+                  </div>
+                  <div v-if="item.note" class="px-5 py-2.5 bg-white/60 text-[12px]">{{ item.note }}</div>
+                </div>
+                <button @click.stop="editItem(item)" class="absolute right-3 -top-2 w-8 h-8 rounded-full bg-white text-amber grid place-items-center shadow press ink-b" v-html="icon('edit','w-4 h-4')"></button>
+                <span v-if="catFilter==='全部'" class="drag-handle absolute -left-1 top-1/2 -translate-y-1/2 w-6 h-10 grid place-items-center text-ink/50 cursor-grab" v-html="icon('grip','w-4 h-4')"></span>
+              </div>
+
+              <!-- 一般行程卡片 -->
+              <div v-else class="soft-card rounded-[22px] flex items-stretch overflow-hidden">
+                <span v-if="catFilter==='全部'" class="drag-handle w-6 shrink-0 grid place-items-center text-[#D9CBAF] cursor-grab touch-none" v-html="icon('grip','w-4 h-4')"></span>
+                <div class="flex-1 min-w-0 py-3.5 pr-2 press" :class="catFilter==='全部' ? '' : 'pl-4'" @click="openNaver(item.query || item.name)">
+                  <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 shrink-0 rounded-full grid place-items-center text-ink ink-b" :style="{ background: CAT_STYLE[item.cat].color }" v-html="icon(CAT_STYLE[item.cat].icon,'w-[15px] h-[15px]')"></span>
+                    <span v-if="item.time" class="font-maru text-[13px] font-bold text-amber">{{ item.time }}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full" :style="{ background: CAT_STYLE[item.cat].color, color: '#3E3A39', border: '2px solid #3E3A39' }">{{ item.cat }}</span>
+                  </div>
+                  <p class="font-maru text-[16px] font-bold mt-1.5 leading-snug">{{ item.name }}</p>
+                  <div class="mt-1.5 space-y-1 text-[12px] text-sub">
+                    <p v-if="hasHours(item.cat) && item.hours" class="flex gap-1.5"><span class="shrink-0">營業</span><span class="text-ink/80">{{ item.hours }}</span></p>
+                    <p v-if="item.cat==='景點' && item.ticket" class="flex gap-1.5"><span class="shrink-0">門票</span><span class="text-ink/80 whitespace-pre-line">{{ item.ticket }}</span></p>
+                    <p v-if="item.note" class="leading-relaxed whitespace-pre-line text-ink/70">{{ item.note }}</p>
+                  </div>
+                  <div v-if="item.sunriseFor" class="mt-2.5 rounded-2xl sun-card px-3.5 py-3">
+                    <p class="text-[11px]">{{ md(item.sunriseFor) }} 城山日出峰 日出</p>
+                    <p class="font-maru text-[26px] font-bold leading-tight">{{ sunriseInfo(item.sunriseFor).sunrise }}</p>
+                    <p class="text-[12px] mt-0.5">建議 {{ sunriseInfo(item.sunriseFor).leave }} 從民宿出發・{{ sunriseInfo(item.sunriseFor).climb }} 前開始登山</p>
+                  </div>
+                  <a v-for="l in (item.links || [])" :key="l.url" :href="l.url" target="_blank" rel="noopener" @click.stop
+                     class="mt-2.5 mr-1.5 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-bold press ink-b" :style="{ background: l.bg, color: l.color }">
+                    🎟 {{ l.label }}
+                  </a>
+                  <a v-if="item.link" :href="item.link.url" target="_blank" rel="noopener" @click.stop
+                     class="mt-2.5 mr-1.5 inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-[#E6F1F4] text-[#4F8597] text-[12px] font-bold press ink-b">
+                    <span class="w-5 h-5 rounded-full bg-[#6FA7B8] text-white grid place-items-center" v-html="icon('ferry','w-3 h-3')"></span>
+                    {{ item.link.label }}
+                  </a>
+                  <div v-if="item.cat === '住宿' && item.lat != null">
+                    <div class="mt-2.5 flex flex-wrap gap-1.5">
+                  <button v-for="n in NEARBY" :key="n.key" @click.stop="openNearby(n, item)"
+                          class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold press ink-b" :style="{ background: n.bg, color: n.color }">
+                    <span>{{ n.emoji }}</span>{{ n.label }}
+                  </button>
+                </div>
+                  </div>
+                  <button v-if="item.cat === '美食'" @click.stop="openMatjip(regionOf(item))"
+                          class="mt-2.5 inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-[#FFF1CC] text-amber text-[12px] font-bold press ink-b">
+                    <span class="w-5 h-5 rounded-full bg-[#B9DAA5] text-ink ink-b grid place-items-center" v-html="icon('food','w-3 h-3')"></span>
+                    搜尋{{ regionOf(item).zh }}附近 맛집
+                  </button>
+                  <button v-if="item.cat === '美食'" @click.stop="openCatchtable(item)"
+                          class="mt-2.5 inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-[#FBE9E5] text-[#D0705E] text-[12px] font-bold press ink-b">
+                    <span class="w-5 h-5 rounded-full bg-[#E2614E] text-white grid place-items-center font-maru text-[10px] font-bold">C</span>
+                    CATCHTABLE 訂位
+                  </button>
+                </div>
+                <div class="flex flex-col items-center justify-between py-3 pr-3 gap-2">
+                  <button @click.stop="editItem(item)" class="w-8 h-8 rounded-full bg-cream text-sub grid place-items-center press ink-b" v-html="icon('edit','w-4 h-4')"></button>
+                  <button @click.stop="openNaver(item.query || item.name)" class="w-8 h-8 rounded-full bg-[#B9DAA5] text-ink ink-b grid place-items-center press" aria-label="Naver 導航" v-html="icon('nav','w-4 h-4')"></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <p class="text-[11px] text-sub/80 text-center mt-6 leading-relaxed">交通時間為直線距離估算，點交通標籤可切換 步行 / 開車<br/>點卡片即開啟 Naver Map</p>
+          <button @click="resetDay" class="mx-auto mt-4 block text-[11px] text-sub underline underline-offset-2 press">還原這一天的預設行程</button>
+          <p class="text-[10px] text-sub/60 text-center mt-3">版本 11/19-G（貼紙風＋倒數）</p>
+        </div>
+      </section>
+
+      <!-- ============ 2. 資訊 ============ -->
+      <section v-if="tab === 'info'" class="px-5">
+        <p class="text-[11px] tracking-[.3em] text-sub">INFORMATION</p>
+        <h1 class="font-maru text-xl font-bold mt-0.5">旅行資訊</h1>
+
+        <!-- 匯率換算 -->
+        <h2 class="mt-6 mb-3 font-maru font-bold flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-honey ink-b"></span>匯率換算</h2>
+        <div class="soft-card rounded-[24px] p-4">
+          <div class="flex gap-2">
+            <select v-model="fx.cur" class="field !w-[110px] !rounded-2xl">
+              <option value="KRW">₩ 韓元</option>
+              <option value="JPY">¥ 日圓</option>
+              <option value="USD">$ 美元</option>
+            </select>
+            <input v-model="fx.amount" type="number" inputmode="decimal" placeholder="輸入外幣金額" class="field !rounded-2xl font-maru !text-lg" />
+          </div>
+          <div class="mt-4 flex items-end justify-between">
+            <div>
+              <p class="text-xs text-sub">約新台幣</p>
+              <p class="font-maru text-[32px] font-bold text-amber leading-tight">NT$ {{ fxResult }}</p>
+            </div>
+            <div class="text-right text-[11px] text-sub leading-relaxed">
+              <p v-if="fx.rates">1 {{ fx.cur }} ≈ {{ fxUnit }} TWD</p>
+              <p>{{ fx.status }}</p>
+            </div>
+          </div>
+          <div class="mt-3 flex gap-2 flex-wrap">
+            <button v-for="q in fxQuick" :key="q" @click="fx.amount = q" class="text-xs px-3 py-1.5 rounded-full bg-cream press ink-b">{{ q.toLocaleString() }}</button>
+          </div>
+        </div>
+
+        <!-- 航班資訊 -->
+        <h2 class="mt-7 mb-3 font-maru font-bold flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-honey ink-b"></span>航班資訊</h2>
+        <div class="space-y-4">
+          <div v-for="f in [info.flights.out, info.flights.back]" :key="f.code" class="soft-card rounded-[24px] overflow-hidden">
+            <div class="px-5 pt-4 pb-3 flex items-center justify-between">
+              <span class="text-xs px-2.5 py-1 rounded-full font-bold" :class="f.dir==='去程' ? 'bg-[#FFF1CC] text-amber' : 'bg-[#E9F1E6] text-[#6E8F69]'">{{ f.dir }}</span>
+              <span class="text-xs text-sub">{{ f.date }} · {{ f.airline }}</span>
+            </div>
+            <div class="px-5 pb-4 flex items-center">
+              <div>
+                <p class="font-maru text-[34px] font-bold leading-none">{{ f.from }}</p>
+                <p class="text-[11px] text-sub mt-1">{{ f.fromName }}</p>
+              </div>
+              <div class="flex-1 px-3 flex flex-col items-center text-sub">
+                <span class="text-[11px]">{{ f.duration }}</span>
+                <div class="w-full flex items-center gap-1 my-1 text-honey">
+                  <span class="flex-1 border-t border-dashed border-[#E8D7B3]"></span>
+                  <span v-html="icon('plane','w-4 h-4 rotate-90')"></span>
+                  <span class="flex-1 border-t border-dashed border-[#E8D7B3]"></span>
+                </div>
+                <span class="text-[11px]">直飛</span>
+              </div>
+              <div class="text-right">
+                <p class="font-maru text-[34px] font-bold leading-none">{{ f.to }}</p>
+                <p class="text-[11px] text-sub mt-1">{{ f.toName }}</p>
+              </div>
+            </div>
+            <div class="ticket-cut mx-0 border-t border-dashed border-line"></div>
+            <div class="grid grid-cols-3 text-center py-3.5 bg-[#FFFBF0]">
+              <div><p class="text-[10px] text-sub tracking-wider">航班編號</p><p class="font-maru font-bold mt-0.5">{{ f.code }}</p></div>
+              <div><p class="text-[10px] text-sub tracking-wider">起飛</p><p class="font-maru font-bold mt-0.5">{{ f.dep }}</p></div>
+              <div><p class="text-[10px] text-sub tracking-wider">抵達</p><p class="font-maru font-bold mt-0.5">{{ f.arr }}</p></div>
+            </div>
+          </div>
+          <button @click="openSheet('flight')" class="w-full text-xs text-sub py-2 press">✎ 編輯航班時間（請以機票為準）</button>
+        </div>
+
+        <!-- 住宿資訊 -->
+        <h2 class="mt-5 mb-3 font-maru font-bold flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-honey ink-b"></span>住宿資訊</h2>
+        <div class="space-y-3">
+          <div v-for="(h, i) in info.hotels" :key="i" class="soft-card rounded-[22px] p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 shrink-0 rounded-2xl bg-[#EAF1E7] text-[#7E9E79] grid place-items-center" v-html="icon('bed','w-5 h-5')"></div>
+              <div class="flex-1 min-w-0">
+                <p class="text-[11px] text-amber font-bold">{{ md(h.checkin) }} – {{ md(h.checkout) }} · {{ nights(h) }} 晚</p>
+                <p class="font-maru font-bold text-[15px] mt-0.5 leading-snug">{{ h.name }}</p>
+                <p class="text-[12px] text-sub mt-1 leading-relaxed">{{ h.address }}</p>
+                <p v-if="h.tip" class="text-[12px] text-amber/90 mt-1 leading-relaxed">💡 {{ h.tip }}</p>
+              </div>
+              <button @click="openSheet('hotel', i)" class="w-8 h-8 rounded-full bg-cream text-sub grid place-items-center press shrink-0 ink-b" v-html="icon('edit','w-4 h-4')"></button>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <a :href="h.phone ? 'tel:' + h.phone : null" @click="!h.phone && openSheet('hotel', i)"
+                 class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-cream text-[13px] press ink-b">
+                <span v-html="icon('phone','w-4 h-4')"></span>{{ h.phone || '新增電話' }}
+              </a>
+              <button @click="openNaver(h.query || h.address)" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-[#B9DAA5] text-ink ink-b text-[13px] press">
+                <span v-html="icon('nav','w-4 h-4')"></span>Naver 導航
+              </button>
+            </div>
+            <p class="mt-3 text-[11px] text-sub">飯店附近（{{ areaOf(h).zh }}）：</p>
+            <div class="mt-2.5 flex flex-wrap gap-1.5">
+                  <button v-for="n in NEARBY" :key="n.key" @click.stop="openNearby(n, h)"
+                          class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold press ink-b" :style="{ background: n.bg, color: n.color }">
+                    <span>{{ n.emoji }}</span>{{ n.label }}
+                  </button>
+                </div>
+          </div>
+        </div>
+
+        <!-- 租車資訊 -->
+        <h2 class="mt-7 mb-3 font-maru font-bold flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-honey ink-b"></span>租車資訊</h2>
+        <div class="soft-card rounded-[22px] p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 shrink-0 rounded-2xl bg-[#FFF1CC] text-amber grid place-items-center" v-html="icon('car','w-5 h-5')"></div>
+            <div class="flex-1 min-w-0">
+              <p class="font-maru font-bold text-[15px]">{{ info.rental.company }}</p>
+              <p class="text-[12px] text-sub mt-0.5">{{ info.rental.car || '車型：未填寫' }}</p>
+            </div>
+            <button @click="openSheet('rental')" class="w-8 h-8 rounded-full bg-cream text-sub grid place-items-center press ink-b" v-html="icon('edit','w-4 h-4')"></button>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+            <div class="rounded-2xl bg-[#FBF7EC] p-3"><p class="text-sub">取車</p><p class="font-bold mt-0.5">{{ info.rental.pickup }}</p></div>
+            <div class="rounded-2xl bg-[#FBF7EC] p-3"><p class="text-sub">還車</p><p class="font-bold mt-0.5">{{ info.rental.dropoff }}</p></div>
+          </div>
+          <div class="mt-3 text-[12px] text-sub space-y-1 leading-relaxed">
+            <p v-if="info.rental.booking">訂單編號：<span class="text-ink">{{ info.rental.booking }}</span></p>
+            <p>地址：<span class="text-ink">{{ info.rental.address }}</span></p>
+            <p v-if="info.rental.note" class="whitespace-pre-line">{{ info.rental.note }}</p>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <a :href="info.rental.phone ? 'tel:' + info.rental.phone : null" @click="!info.rental.phone && openSheet('rental')" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-cream text-[13px] press ink-b">
+              <span v-html="icon('phone','w-4 h-4')"></span>{{ info.rental.phone || '新增電話' }}
+            </a>
+            <button @click="openNaver(info.rental.query || info.rental.address)" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-[#B9DAA5] text-ink ink-b text-[13px] press">
+              <span v-html="icon('nav','w-4 h-4')"></span>導航到租車處
+            </button>
+          </div>
+        </div>
+
+        <!-- 緊急醫療 -->
+        <h2 class="mt-7 mb-3 font-maru font-bold flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-[#F2A497] ink-b"></span>緊急聯絡</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <a v-for="e in EMERGENCY" :key="e.num" :href="'tel:' + e.num" class="soft-card rounded-[22px] p-4 press">
+            <p class="text-[12px] text-sub">{{ e.label }}</p>
+            <p class="font-maru font-bold mt-0.5 break-all" :class="e.num.length > 6 ? 'text-[16px] leading-tight py-1' : 'text-[26px]'" :style="{ color: e.color }">{{ e.num }}</p>
+            <p class="text-[11px] text-sub mt-0.5 leading-snug">{{ e.desc }}</p>
+          </a>
+        </div>
+
+        <!-- 旅遊小提醒 -->
+        <h2 class="mt-7 mb-3 font-maru font-bold flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-honey ink-b"></span>旅遊小提醒</h2>
+        <div class="space-y-3">
+          <details v-for="t in TIPS" :key="t.title" class="soft-card rounded-[22px] px-4 py-3.5 group">
+            <summary class="font-maru font-bold text-[15px] list-none flex items-center justify-between cursor-pointer">
+              {{ t.title }}<span class="text-sub transition-transform group-open:rotate-45" v-html="icon('plus','w-4 h-4')"></span>
+            </summary>
+            <ul class="mt-3 space-y-2 text-[13px] text-ink/80 leading-relaxed">
+              <li v-for="(x, i) in t.items" :key="i" class="flex gap-2"><span class="text-honey">•</span><span>{{ x }}</span></li>
+            </ul>
+          </details>
+        </div>
+      </section>
+
+      <!-- ============ 3. 購物清單 ============ -->
+      <section v-if="tab === 'shop'" class="px-5">
+        <div class="flex items-end justify-between">
+          <div>
+            <p class="text-[11px] tracking-[.3em] text-sub">SHOPPING LIST</p>
+            <h1 class="font-maru text-xl font-bold mt-0.5">購物清單</h1>
+          </div>
+          <span class="text-xs text-sub">已買 {{ shopping.filter(s=>s.done).length }} / {{ shopping.length }}</span>
+        </div>
+        <div v-if="!shopping.length" class="text-center py-16 text-sub text-sm">
+          <div class="mx-auto w-14 h-14 rounded-full bg-cream grid place-items-center mb-3" v-html="icon('basket','w-6 h-6')"></div>
+          想買的東西都記在這裡吧
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-5">
+          <div v-for="s in shopping" :key="s.id" class="soft-card rounded-[22px] overflow-hidden press" @click="openSheet('shop', s)">
+            <div class="aspect-square bg-cream relative">
+              <img v-if="s.photo" :src="s.photo" class="w-full h-full object-cover" :class="s.done && 'opacity-50 grayscale'" />
+              <div v-else class="w-full h-full grid place-items-center text-[#D7C49E]" v-html="icon('basket','w-10 h-10')"></div>
+              <button @click.stop="s.done = !s.done" class="absolute top-2 right-2 w-8 h-8 rounded-full grid place-items-center shadow press ink-b"
+                      :class="s.done ? 'bg-[#8BA888] text-white' : 'bg-white/90 text-sub'" v-html="icon('check','w-4 h-4')"></button>
+            </div>
+            <div class="px-3 py-2.5">
+              <p class="font-maru font-bold text-[14px] leading-snug" :class="s.done && 'line-through text-sub'">{{ s.name }}</p>
+              <p v-if="s.note" class="text-[11px] text-sub mt-0.5 truncate">{{ s.note }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 4. 花費 ============ -->
+      <section v-if="tab === 'money'" class="px-5">
+        <p class="text-[11px] tracking-[.3em] text-sub">EXPENSES</p>
+        <h1 class="font-maru text-xl font-bold mt-0.5">旅行花費</h1>
+
+        <div class="mt-5 rounded-[26px] p-5 total-card">
+          <p class="text-xs opacity-90 tracking-wider">總花費</p>
+          <p class="font-maru text-[34px] font-bold leading-tight mt-1">₩ {{ totalKRW.toLocaleString() }}</p>
+          <p class="text-sm opacity-90">≈ NT$ {{ krwToTwd(totalKRW).toLocaleString() }}</p>
+          <div class="mt-3 flex gap-3 text-[11px] opacity-95">
+            <span>現金 ₩{{ sumBy('現金').toLocaleString() }}</span>
+            <span>信用卡 ₩{{ sumBy('信用卡').toLocaleString() }}</span>
+          </div>
+        </div>
+
+        <!-- 類別小計 -->
+        <div class="mt-4 flex gap-2 overflow-x-auto no-scrollbar">
+          <div v-for="c in EXP_CATS" :key="c" class="shrink-0 px-3 py-2 rounded-2xl bg-cream text-[12px]">
+            <span class="text-sub">{{ c }}</span>
+            <span class="font-bold ml-1.5">₩{{ catSum(c).toLocaleString() }}</span>
+          </div>
+        </div>
+
+        <div v-if="!expenses.length" class="text-center py-14 text-sub text-sm">
+          <div class="mx-auto w-14 h-14 rounded-full bg-cream grid place-items-center mb-3" v-html="icon('money','w-6 h-6')"></div>
+          還沒有花費紀錄
+        </div>
+
+        <div v-for="g in expenseGroups" :key="g.date" class="mt-5">
+          <div class="flex items-center justify-between text-xs text-sub mb-2 px-1">
+            <span class="font-maru font-bold text-ink">{{ fmtFull(g.date) }}</span>
+            <span>₩ {{ g.total.toLocaleString() }}</span>
+          </div>
+          <div class="soft-card rounded-[22px] divide-y divide-[#F5EDDB]">
+            <div v-for="e in g.items" :key="e.id" class="flex items-center gap-3 px-4 py-3 press" @click="openSheet('expense', e)">
+              <span class="w-9 h-9 shrink-0 rounded-full grid place-items-center text-ink ink-b" :style="{ background: EXP_STYLE[e.cat].color }" v-html="icon(EXP_STYLE[e.cat].icon,'w-4 h-4')"></span>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-[14px] truncate">{{ e.name }}</p>
+                <p class="text-[11px] text-sub truncate">{{ e.cat }} · {{ e.pay }}<span v-if="e.note"> · {{ e.note }}</span></p>
+              </div>
+              <div class="text-right">
+                <p class="font-maru font-bold">₩{{ Number(e.amount).toLocaleString() }}</p>
+                <p class="text-[10px] text-sub">≈ NT${{ krwToTwd(e.amount).toLocaleString() }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ================= ＋ 新增按鈕（右下角） ================= -->
+    <transition name="fade">
+      <button v-if="tab !== 'info'" @click="onFab"
+              class="fab fixed z-30 w-14 h-14 rounded-full bg-honey text-ink grid place-items-center press"
+              :style="{ right: fabRight, bottom: 'calc(24px + var(--safe-b))' }"
+              aria-label="新增" v-html="icon('plus','w-7 h-7')"></button>
+    </transition>
+
+    <!-- ================= 底部彈出視窗 ================= -->
+    <transition name="sheet">
+      <div v-if="sheet" class="fixed inset-0 z-40 flex items-end justify-center bg-[#5B4A36]/30 backdrop-blur-[2px]" @click.self="closeSheet">
+        <div class="sheet-body w-full max-w-[480px] bg-paper rounded-t-[30px] max-h-[88vh] overflow-y-auto no-scrollbar" :style="{ paddingBottom: 'calc(20px + var(--safe-b))' }">
+          <div class="sticky top-0 bg-paper/95 backdrop-blur px-5 pt-3 pb-3 z-10">
+            <div class="mx-auto w-10 h-1.5 rounded-full bg-ink/30"></div>
+            <div class="flex items-center justify-between mt-3">
+              <h3 class="font-maru text-lg font-bold">{{ sheetTitle }}</h3>
+              <button @click="closeSheet" class="w-8 h-8 rounded-full bg-cream grid place-items-center text-sub press ink-b" v-html="icon('x','w-4 h-4')"></button>
+            </div>
+          </div>
+
+          <div class="px-5 space-y-4">
+            <!-- 行程 -->
+            <template v-if="sheet.type === 'item'">
+              <div>
+                <label class="label">分類</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button v-for="c in CATS" :key="c" @click="form.cat = c"
+                          class="py-2.5 rounded-2xl text-[13px] flex items-center justify-center gap-1.5 press border ink-b"
+                          :class="form.cat === c ? 'text-ink ink-b' : 'ink-b bg-white text-ink'"
+                          :style="form.cat === c ? { background: CAT_STYLE[c].color } : {}">
+                    <span v-html="icon(CAT_STYLE[c].icon,'w-4 h-4')"></span>{{ c }}
+                  </button>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <div class="col-span-2"><label class="label">名稱 *</label><input v-model="form.name" class="field" placeholder="例：城山日出峰" /></div>
+                <div><label class="label">時間</label><input v-model="form.time" type="time" class="field" /></div>
+              </div>
+              <div v-if="hasHours(form.cat)"><label class="label">營業時間</label><input v-model="form.hours" class="field" placeholder="例：09:00–18:00" /></div>
+              <div v-if="form.cat === '景點'"><label class="label">門票</label><input v-model="form.ticket" class="field" placeholder="例：成人 ₩5,000" /></div>
+              <div><label class="label">特色＆備註</label><textarea v-model="form.note" rows="3" class="field resize-none" placeholder="必吃、必買、注意事項…"></textarea></div>
+              <div>
+                <label class="label">Naver 搜尋關鍵字（韓文名稱或地址，導航更準）</label>
+                <input v-model="form.query" class="field" placeholder="例：성산일출봉" />
+              </div>
+              <p class="text-[11px] text-sub px-1">儲存後會自動定位並重新計算前後的交通時間</p>
+
+              <div class="flex gap-2 pt-2">
+                <button v-if="sheet.editing" @click="confirmDelete = true" class="w-14 rounded-2xl bg-[#FBE9E5] text-[#D0705E] grid place-items-center press ink-b" v-html="icon('trash','w-5 h-5')"></button>
+                <button @click="saveItem" class="flex-1 py-3.5 rounded-2xl bg-honey text-ink font-bold press ink-b">{{ sheet.editing ? '儲存變更' : '新增行程' }}</button>
+              </div>
+            </template>
+
+            <!-- 購物 -->
+            <template v-if="sheet.type === 'shop'">
+              <label class="block">
+                <span class="label">圖片</span>
+                <div class="aspect-[4/3] rounded-[22px] bg-cream border-2 border-dashed border-[#EADBB9] overflow-hidden grid place-items-center press ink-b">
+                  <img v-if="form.photo" :src="form.photo" class="w-full h-full object-cover" />
+                  <div v-else class="text-center text-sub text-sm">
+                    <div class="mx-auto w-12 h-12 rounded-full bg-white grid place-items-center mb-2" v-html="icon('camera','w-6 h-6')"></div>
+                    拍照或從相簿選擇
+                  </div>
+                </div>
+                <input type="file" accept="image/*" class="hidden" @change="onPhoto" />
+              </label>
+              <div><label class="label">商品名稱 *</label><input v-model="form.name" class="field" placeholder="例：橘子巧克力" /></div>
+              <div><label class="label">備註</label><input v-model="form.note" class="field" placeholder="哪裡買、幫誰買…" /></div>
+              <div class="flex gap-2 pt-2">
+                <button v-if="sheet.editing" @click="confirmDelete = true" class="w-14 rounded-2xl bg-[#FBE9E5] text-[#D0705E] grid place-items-center press ink-b" v-html="icon('trash','w-5 h-5')"></button>
+                <button @click="saveShop" class="flex-1 py-3.5 rounded-2xl bg-honey text-ink font-bold press ink-b">{{ sheet.editing ? '儲存變更' : '加入清單' }}</button>
+              </div>
+            </template>
+
+            <!-- 花費 -->
+            <template v-if="sheet.type === 'expense'">
+              <div>
+                <label class="label">類別</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button v-for="c in EXP_CATS" :key="c" @click="form.cat = c"
+                          class="py-2.5 rounded-2xl text-[13px] flex items-center justify-center gap-1.5 border press ink-b"
+                          :class="form.cat === c ? 'text-ink ink-b' : 'ink-b bg-white text-ink'"
+                          :style="form.cat === c ? { background: EXP_STYLE[c].color } : {}">
+                    <span v-html="icon(EXP_STYLE[c].icon,'w-4 h-4')"></span>{{ c }}
+                  </button>
+                </div>
+              </div>
+              <div><label class="label">名稱 *</label><input v-model="form.name" class="field" placeholder="例：黑豬肉晚餐" /></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="label">日期</label><input v-model="form.date" type="date" class="field" /></div>
+                <div><label class="label">金額（韓元 ₩）*</label><input v-model="form.amount" type="number" inputmode="numeric" class="field font-maru" placeholder="0" /></div>
+              </div>
+              <p v-if="form.amount" class="text-xs text-sub -mt-2 px-1">≈ NT$ {{ krwToTwd(form.amount).toLocaleString() }}</p>
+              <div>
+                <label class="label">付款方式</label>
+                <div class="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-cream">
+                  <button v-for="p in ['現金','信用卡']" :key="p" @click="form.pay = p" class="py-2.5 rounded-xl text-sm press ink-b" :class="form.pay === p ? 'bg-white shadow font-bold' : 'text-sub'">{{ p }}</button>
+                </div>
+              </div>
+              <div><label class="label">備註</label><input v-model="form.note" class="field" placeholder="選填" /></div>
+              <div class="flex gap-2 pt-2">
+                <button v-if="sheet.editing" @click="confirmDelete = true" class="w-14 rounded-2xl bg-[#FBE9E5] text-[#D0705E] grid place-items-center press ink-b" v-html="icon('trash','w-5 h-5')"></button>
+                <button @click="saveExpense" class="flex-1 py-3.5 rounded-2xl bg-honey text-ink font-bold press ink-b">{{ sheet.editing ? '儲存變更' : '新增花費' }}</button>
+              </div>
+            </template>
+
+            <!-- 住宿編輯 -->
+            <template v-if="sheet.type === 'hotel'">
+              <div><label class="label">飯店名稱</label><input v-model="form.name" class="field" /></div>
+              <div><label class="label">電話</label><input v-model="form.phone" type="tel" class="field" placeholder="+82-64-xxx-xxxx" /></div>
+              <div><label class="label">地址</label><textarea v-model="form.address" rows="2" class="field resize-none"></textarea></div>
+              <div><label class="label">Naver 搜尋關鍵字（韓文名稱或地址）</label><input v-model="form.query" class="field" /></div>
+              <button @click="saveInfo" class="w-full py-3.5 rounded-2xl bg-honey text-ink font-bold press ink-b">儲存</button>
+            </template>
+
+            <!-- 租車編輯 -->
+            <template v-if="sheet.type === 'rental'">
+              <div><label class="label">租車公司</label><input v-model="form.company" class="field" /></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="label">車型</label><input v-model="form.car" class="field" placeholder="例：Kia Ray" /></div>
+                <div><label class="label">訂單編號</label><input v-model="form.booking" class="field" /></div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="label">取車時間</label><input v-model="form.pickup" class="field" /></div>
+                <div><label class="label">還車時間</label><input v-model="form.dropoff" class="field" /></div>
+              </div>
+              <div><label class="label">電話</label><input v-model="form.phone" type="tel" class="field" /></div>
+              <div><label class="label">地址</label><input v-model="form.address" class="field" /></div>
+              <div><label class="label">Naver 搜尋關鍵字</label><input v-model="form.query" class="field" /></div>
+              <div><label class="label">備註（保險、押金、取車方式…）</label><textarea v-model="form.note" rows="4" class="field resize-none"></textarea></div>
+              <button @click="saveInfo" class="w-full py-3.5 rounded-2xl bg-honey text-ink font-bold press ink-b">儲存</button>
+            </template>
+
+            <!-- 航班編輯 -->
+            <template v-if="sheet.type === 'flight'">
+              <div v-for="k in ['out','back']" :key="k" class="rounded-2xl bg-cream p-3 space-y-3">
+                <p class="font-maru font-bold text-sm">{{ form[k].dir }} {{ form[k].code }}</p>
+                <div class="grid grid-cols-3 gap-2">
+                  <div><label class="label">起飛</label><input v-model="form[k].dep" type="time" class="field !px-2" /></div>
+                  <div><label class="label">抵達</label><input v-model="form[k].arr" type="time" class="field !px-2" /></div>
+                  <div><label class="label">飛行時間</label><input v-model="form[k].duration" class="field !px-2" /></div>
+                </div>
+              </div>
+              <button @click="saveInfo" class="w-full py-3.5 rounded-2xl bg-honey text-ink font-bold press ink-b">儲存</button>
+            </template>
+          </div>
+        </div>
+
+        <!-- 刪除確認 -->
+        <transition name="fade">
+          <div v-if="confirmDelete" class="fixed inset-0 z-50 grid place-items-center bg-[#5B4A36]/30 px-8" @click.self="confirmDelete = false">
+            <div class="w-full max-w-[320px] bg-paper rounded-[26px] p-6 text-center">
+              <div class="mx-auto w-14 h-14 rounded-full bg-[#FBE9E5] text-[#D0705E] grid place-items-center" v-html="icon('trash','w-6 h-6')"></div>
+              <p class="font-maru font-bold text-lg mt-3">確定要刪除嗎？</p>
+              <p class="text-sm text-sub mt-1">「{{ form.name }}」刪除後無法復原</p>
+              <div class="grid grid-cols-2 gap-2 mt-5">
+                <button @click="confirmDelete = false" class="py-3 rounded-2xl bg-cream press ink-b">取消</button>
+                <button @click="doDelete" class="py-3 rounded-2xl bg-[#D0705E] text-white font-bold press ink-b">刪除</button>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </transition>
+
+    <!-- Toast -->
+    <transition name="fade">
+      <div v-if="toast" class="fixed left-1/2 -translate-x-1/2 bottom-28 z-[60] px-4 py-2.5 rounded-full bg-ink/90 text-white text-sm shadow-lg">{{ toast }}</div>
+    </transition>
+  </div>
+</div>
+
+<script>
+const { createApp, reactive, ref, computed, watch, nextTick, onMounted } = Vue;
+
+/* =========================================================
+   旅程基本資料（可在 App 內編輯，也可直接改這裡）
+   ========================================================= */
+const DATES = ['2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'];
+const CATS = ['景點','住宿','美食','購物','航班','其他'];
+const EXP_CATS = ['交通','飲食','住宿','門票','購物','其他'];
+const STORE_KEY = 'jeju-trip-2026-v2';
+
+
+/* 9.81 Park 線上票價（台幣，價格會變動，以訂購頁為準） */
+const TICKET_981 = 'Klook：早鳥 Race & Play 1人 NT$783・2人(大+小) NT$1,009／全套 1人 NT$1,211\nKKday：NT$789 起（可用折扣碼 JEJU200）';
+const LINKS_981 = [
+  { label:'Klook 訂票', url:'https://www.klook.com/zh-TW/activity/86261-981-park-ticket-jeju/', bg:'#FFEDE3', color:'#E8590C' },
+  { label:'KKday 訂票', url:'https://www.kkday.com/zh-tw/product/131733', bg:'#E2F6F7', color:'#13939C' },
+];
+
+/* 景點門票（2026 年資料；現場價格以當天公告為準） */
+const TICKETS = {
+  '용두암': '免費',
+  '스누피가든': '成人 ₩19,000・兒童 ₩13,000（VISITKOREA 會員線上 9 折）',
+  '우도': '渡輪來回＋入島費：成人 ₩11,000・國高中 ₩10,800・國小 ₩3,800（只能現場買，要帶護照）',
+  '광치기해변': '免費',
+  '아쿠아플라넷 제주': '線上入場券約 ₩28,200（含海洋劇場表演、海女展）',
+  '정방폭포': '成人 ₩2,000・青少年／兒童 ₩1,000',
+  '돌코리숲': '成人 ₩19,000・青少年 ₩16,000（雨天 ₩12,000／₩10,000）',
+  '헬로키티아일랜드': '線上約 ₩11,000–12,000 起',
+  '제주항공우주박물관': '成人 ₩10,000・青少年 ₩9,000・兒童 ₩8,000',
+
+  '아르떼뮤지엄 제주': '成人 ₩18,000・青少年 ₩14,000・兒童 ₩11,000',
+  '협재해수욕장': '免費',
+};
+
+/* 每天依行程內容的穿搭小提醒 */
+const DAY_WEAR = {
+  '2026-11-28': '早上搭機、晚上看亂打秀：室內有暖氣，洋蔥式穿法方便穿脫',
+  '2026-11-29': '萬丈窟洞內陰涼潮濕、地面濕滑：多帶一件外套，穿防滑好走的鞋',
+  '2026-11-30': '清晨爬日出峰＋渡輪海風是全程最冷的一天：毛帽、手套、圍巾全上，穿運動鞋',
+  '2026-12-01': '水族館在室內、民俗村和瀑布在戶外：外套好穿脫，瀑布步道有階梯',
+  '2026-12-02': '園區戶外走路多：好走的鞋＋可收進包包的外套',
+  '2026-12-03': '一早就玩 9.81 Park：規定穿包鞋／平底鞋，早上山區風大要穿防風外套；挾才海邊傍晚也很冷',
+  '2026-12-04': '早上海邊散步風大；回程飛機上帶件薄外套，退稅品記得放隨身',
+};
+const AIRPORT = { lat: 33.5070, lng: 126.4930 };
+
+const DEFAULT_INFO = {
+  flights: {
+    out:  { dir:'去程', code:'IT632', airline:'台灣虎航', date:'11/28 (Sat)', from:'RMQ', fromName:'台中國際機場', to:'CJU', toName:'濟州國際機場', dep:'07:00', arr:'10:00', duration:'2h 00m', navQuery:'제주국제공항' },
+    back: { dir:'回程', code:'IT633', airline:'台灣虎航', date:'12/04 (Fri)', from:'CJU', fromName:'濟州國際機場', to:'RMQ', toName:'台中國際機場', dep:'19:50', arr:'21:05', duration:'2h 15m', navQuery:'제주국제공항' },
+  },
+  hotels: [
+    { name:'三海人觀光飯店 Hotel Samhaein', short:'三海人飯店', phone:'', address:'제주시 연동 260-9（蓮洞）', query:'삼해인관광호텔', tip:'離機場約 3–4 km，走路可到 Nuwemaru 街、SPAO', checkin:'2026-11-28', checkout:'2026-11-29', lat:33.4880, lng:126.4925 },
+    { name:'寶島民宿 Bomulseom Pension 보물섬펜션', short:'寶島民宿', phone:'', address:'서귀포시 성산읍 한도로242번길 10-11', query:'보물섬펜션', tip:'走路約 15 分鐘到日出峰、9 分鐘到牛島碼頭；冬季沒有烤肉區', checkin:'2026-11-29', checkout:'2026-12-01', lat:33.4690, lng:126.9310 },
+    { name:'Vistacay 世界盃飯店 Vistacay Hotel World Cup', short:'Vistacay', phone:'', address:'서귀포시 김정문화로41번길 10-6', query:'비스타케이호텔 월드컵', tip:'世界盃體育場旁，開車約 15 分鐘到每日偶來市場', checkin:'2026-12-01', checkout:'2026-12-03', lat:33.2480, lng:126.5100 },
+    { name:'挾才阿魯米飯店 Aroomi Hotel Hyupjae', short:'Aroomi 挾才', phone:'', address:'제주시 한림읍 한림로 545', query:'아루미호텔 협재점', tip:'離挾才海邊約 2 km，可以看夕陽', checkin:'2026-12-03', checkout:'2026-12-04', lat:33.3930, lng:126.2440 },
+  ],
+  rental: {
+    company:'天使租車 (Jeju Angel Car)', car:'', booking:'', phone:'',
+    pickup:'11/28 抵達後（約 10:30）', dropoff:'12/4 16:30 前',
+    address:'제주시 도령로 171-1',
+    query:'제주시 도령로 171-1',
+    note:'取車要帶：護照、台灣駕照正本、國際駕照、預約確認信、預約用的信用卡\n出境大廳依「렌터카 Rent-a-car」指標到接駁車區，搭租車公司接駁巴士\n取車時拍照／錄影車身四周、油表與里程\n還車前先加滿油，再搭接駁車回機場',
+  },
+};
+
+const EMERGENCY = [
+  { label:'警察', num:'112', desc:'報案、遺失、交通事故', color:'#5C82B5' },
+  { label:'消防・救護車', num:'119', desc:'急病、受傷、火災', color:'#D0705E' },
+  { label:'韓國旅遊諮詢', num:'1330', desc:'可說中文', color:'#C98E3B' },
+  { label:'旅外國人急難救助', num:'+886-800-085-095', desc:'台灣境內撥 0800-085-095', color:'#7E9E79' },
+  { label:'駐釜山辦事處', num:'051-463-7965', desc:'濟州島由釜山辦事處負責', color:'#7E9E79' },
+  { label:'急難救助手機', num:'010-4537-7961', desc:'非緊急請勿撥打', color:'#D0705E' },
+];
+
+const TIPS = [
+  { title:'韓國電子入境卡', items:[
+    '出國前 3 天內到官方網站 www.e-arrivalcard.go.kr 填寫（免費，小心假網站）',
+    '準備：護照、航班號碼、住宿地址、Email',
+    '入境 11/28 IT632、出境 12/4 IT633',
+    '住宿地址填：제주시 연동 260-9（Hotel Samhaein）',
+    '提交後截圖保存 QR Code，入境時出示',
+  ]},
+  { title:'退稅注意事項', items:[
+    '有 TAX FREE 標誌的店，同一家店單次滿 15,000 韓元可退稅，結帳出示護照',
+    '有的店現場直接扣稅；有的拿退稅單到機場退',
+    '商品要未拆封、未使用；先辦退稅再托運',
+    '餐飲、門票、交通卡儲值不能退稅',
+    '12/4 出境前預留時間在濟州機場辦退稅',
+  ]},
+  { title:'濟州自駕注意事項', items:[
+    '靠右行駛，紅燈右轉要先停、確認沒有行人',
+    '測速照相多，速限 50–80 km/h，學校周邊 30 km/h',
+    '禁止停黃線，罰款會寄到租車公司',
+    '自助加油：汽油 휘발유、柴油 경유，先確認油種',
+    'Google Maps 在韓國不準，請用 Naver Map',
+    '牛島不能開租車上島，車停城山港停車場',
+  ]},
+  { title:'行前提醒', items:[
+    '台灣旅客 2026/12/31 前免申請 K-ETA，護照效期需 6 個月以上',
+    '投保旅遊平安險、不便險；信用卡開通國外刷卡',
+    '11 月底–12 月初白天約 10–15°C、早晚 5–8°C，風很大，帶防風外套、毛帽、手套',
+    '行動電源只能放隨身行李',
+    '牛島船票只能現場買、要帶護照；冬季風大可能停駛',
+  ]},
+];
+
+/* ---------- 預設行程（依 Word 行程表；座標為概略位置，用於估算交通時間） ---------- */
+let _id = 1; const uid = () => 'i' + Date.now().toString(36) + (_id++);
+const P = (cat, time, name, query, lat, lng, extra = {}) => ({ id: uid(), cat, time, name, query, lat, lng, hours:'', ticket:'', note:'', ...extra });
+
+const DEFAULT_DAYS = {
+  '2026-11-28': [
+    P('航班','07:00','IT632 台中 → 濟州','제주국제공항', AIRPORT.lat, AIRPORT.lng, { flightKey:'out', note:'10:00 抵達：入境、領行李、取租車，約 1 小時' }),
+    P('美食','11:30','午餐：姐妹麵條 자매국수 ★必去','자매국수', 33.5125, 126.5300, { hours:'約 09:00–18:00，週三公休', note:'招牌豬骨湯底肉湯麵（고기국수，不辣），也有砧板豬肉、水餃；拌麵偏辣\n有停車場，人多時用門口機器登記候位' }),
+    P('景點','12:30','龍頭岩・龍淵吊橋','용두암', 33.5163, 126.5120, { ticket:'免費', note:'海邊散步；時間夠可以去梨湖木馬燈塔拍照' }),
+    P('住宿','14:30','三海人飯店 入住','삼해인관광호텔', 33.4880, 126.4925, { hours:'15:00 入住 / 11:00 退房', note:'寄放行李或辦入住，稍微休息\n15:45 出發往亂打秀（車程約 15–20 分）' }),
+    P('景點','16:30','亂打秀 NANTA 濟州劇場 ★必去','난타 제주전용관', 33.4720, 126.5450, { ticket:'已購票（買票時確認 16:30／17:00 場次）', note:'約 90 分鐘廚房打擊秀，開演前 1 小時可換票' }),
+    P('美食','19:00','晚餐：秘苑蔘雞湯 비원 삼계탕 ★必去','비원 삼계탕 제주', 33.4830, 126.4800, { hours:'約 10:00–22:00（資料較舊，出發前確認）', note:'1968 年開業的人蔘雞湯老店，湯頭清淡不辣，有大停車場\n吃完回蓮洞 Nuwemaru 街逛 Jeju Star、Hi Jeju 小店' }),
+    P('購物','20:30','SPAO 新濟州店','스파오 신제주점', 33.4870, 126.4900, { hours:'11:00–22:00', note:'韓國平價服飾，可以退稅；沒時間的話 D7 中央路店也可' }),
+  ],
+  '2026-11-29': [
+    P('景點','09:20','濟州童話村＋Studio Ghibli 展 ★必去','제주동화마을', 33.4645, 126.7010, { hours:'09:00–19:00（18:00 停止入場）', ticket:'成人 ₩22,000', note:'吉卜力展在童話藝術中心裡，約 1.5 小時\n紀念品店要持票才能進' }),
+    P('購物','11:15','Jongjong Jeju 종종제주 ★必去','종종제주', 33.5100, 126.7100, { hours:'每天 10:30–18:00', note:'朝天邑善屹里選物店：濟州日常主題設計小物、陶器、木作；可退稅、有停車場' }),
+    P('購物','12:10','object 오브젝트 제주 ★必去','오브젝트 제주', 33.5550, 126.7030, { hours:'10:00–18:00', note:'舊左邑 동복로 87，很多濟州限定商品，可 DIY 燙章做吊飾，逛 30–40 分' }),
+    P('美食','12:50','午餐：白狗屋 백구옥 ★必去','백구옥', 33.5320, 126.8380, { hours:'11:00–16:00（15:30 最後點餐）', note:'坪岱海邊百年老屋改建\n招牌海膽飯捲、砧板豬肉、炸物，也有不辣的炸豬排；賣完提早關' }),
+    P('景點','14:00','史努比庭園 Snoopy Garden ★必去','스누피가든', 33.4436, 126.7796, { hours:'冬季 09:00–18:00，全年無休', ticket:'成人 ₩19,000・兒童 ₩13,000（VISITKOREA 會員線上 9 折）', note:'留約 1 小時 45 分，15:45 前離開去萬丈窟' }),
+    P('景點','16:00','萬丈窟 만장굴 ★必去','만장굴', 33.5283, 126.7710, { hours:'09:00–18:00（約 17:10 停止入場），每月第一個週三公休', ticket:'成人 ₩4,000', note:'世界自然遺產熔岩洞，約 1 km 木棧道，來回約 50 分\n洞內涼，要帶外套' }),
+    P('購物','17:00','Mongle 몽그레 月汀里店 ★必去','몽그레 월정리점', 33.5560, 126.7960, { hours:'約到 18:00', note:'招牌雲朵造型濟州大麥夾心餅乾，樓上有海景拍照點' }),
+    P('美食','17:45','晚餐：月高家 월고집 月汀里本店 ★必去','월고집 월정리본점', 33.5575, 126.7985, { hours:'21:00 最後點餐', note:'海景黑豬肉，店員代烤；黑豬近古基 600g 約 ₩66,000\n另有泡菜鍋、大醬湯，有停車場' }),
+    P('住宿','19:15','入住 寶島民宿','보물섬펜션', 33.4690, 126.9310, { hours:'22:00 前入住免先聯絡', note:'沿東北海岸開約 30 分鐘' }),
+    P('其他','21:00','⛴ 查詢明天牛島渡輪是否開船','보물섬펜션', 33.4690, 126.9310, { link: { label:'城山此刻：查渡輪是否開船', url:'https://chengshan.kr/zh-hant' }, note:'點下方按鈕開「城山此刻」，看牛島渡輪運航狀態與城山天氣\n明早出發前再看一次，確認當天真的有開船' }),
+    P('其他','21:05','🌅 查詢明天城山日出峰日出時間','성산일출봉', 33.4690, 126.9310, { sunriseFor:'2026-11-30', link: { label:'timeanddate：城山日出時間', url:'https://www.timeanddate.com/astronomy/@33.4581,126.9425' }, note:'日出峰售票處 11–12 月 06:00 開，登頂約 30–40 分鐘\n設好鬧鐘，帶毛帽、手套、頭燈或手機手電筒' }),
+  ],
+  '2026-11-30': [
+    P('景點','06:30','城山日出峰看日出（選擇）★必去','성산일출봉', 33.4581, 126.9425, { hours:'11–12 月 06:00–18:00', ticket:'成人 ₩5,000', note:'日出約 7:20，登頂約 30–40 分鐘' }),
+    P('美食','08:30','早餐：始興海女之家','시흥해녀의집', 33.4880, 126.9080, { hours:'07:00 開', note:'鮑魚粥；或去美味食堂抽號吃燉白帶魚（偏辣）\n順路逛日出峰前的「安寧城山」小物店' }),
+    P('其他','09:30','城山港 搭船去牛島 ★必去','성산포항종합여객터미널', 33.4735, 126.9340, { note:'約 15 分鐘、30 分鐘一班，冬季末班約 17:00\n只能現場買票，要帶護照、填乘船申報單；租車不能上島', link: { label:'城山此刻：查渡輪是否開船', url:'https://chengshan.kr/zh-hant' } }),
+    P('景點','10:00','牛島環島 ★必去','우도', 33.5050, 126.9520, { ticket:'渡輪來回＋入島費：成人 ₩11,000・國高中 ₩10,800・國小 ₩3,800（只能現場買，要帶護照）', segFixed:'渡輪 約 15 分', note:'西濱白沙、牛島峰、下高水洞海邊，吃花生冰淇淋\n島上搭觀光巴士或租電動車' }),
+    P('美食','12:00','牛島午餐：炸豬排／炸醬麵 ★必去','온오프 우도', 33.5150, 126.9620, { hours:'On-Off 11:00–16:00，賣完提早收', note:'① On-Off 온오프：海景黑豬炸豬排（下古水洞海邊旁）\n② 牛島炸醬麵 우도짜장맨：炸醬麵、炒碼麵（偏辣）、糖醋肉\n兩家相距約 3 km，可分頭吃' }),
+    P('其他','15:00','搭船回城山','우도 천진항', 33.4970, 126.9530, { note:'風大可能停駛，出發前打給碼頭確認 064-782-5671' }),
+    P('景點','15:30','光峙其海邊・涉地可支','광치기해변', 33.4520, 126.9230, { ticket:'免費', segFixed:'渡輪＋開車 約 25 分', note:'海岸散步；沒看日出的話，這時去爬日出峰（16:30 前到售票處）' }),
+    P('購物','16:30','Filmlog 필름로그 濟州店 ★必去','필름로그 제주', 33.4610, 126.9300, { hours:'約 13:00–18:00，週二、三公休', note:'底片相機店，門口有底片相機自動販賣機' }),
+    P('美食','18:00','晚餐：福子氏煤炭烤肉','복자씨연탄구이 성산본점', 33.4630, 126.9340, { note:'海景黑豬肉，吃完來碗冷蘿蔔泡菜麵' }),
+    P('住宿','19:30','續住 寶島民宿','보물섬펜션', 33.4690, 126.9310),
+  ],
+  '2026-12-01': [
+    P('景點','09:30','水上星球 Aqua Planet Jeju ★必去','아쿠아플라넷 제주', 33.4330, 126.9275, { hours:'09:30–18:00', ticket:'線上入場券約 ₩28,200（含海洋劇場表演、海女展）', note:'韓國最大水族館\n🐬 海洋劇場表演（40 分鐘・海洋劇場）\n10:50 / 12:50 / 14:50 / 16:20' }),
+    P('美食','12:30','午餐：城邑一帶','성읍민속마을 맛집', 33.3905, 126.7985, { note:'村子周邊有黑豬肉、蕎麥麵等鄉土料理小店' }),
+    P('景點','13:30','城邑民俗村 성읍민속마을 ★必去','성읍민속마을', 33.3870, 126.8010, { ticket:'免費（免費停車）', note:'朝鮮時代旌義縣縣城，茅草屋、黑石牆、石爺爺\n入口可申請免費文化解說，約 40 分鐘' }),
+    P('景點','15:40','正房瀑布','정방폭포', 33.2448, 126.5717, { ticket:'成人 ₩2,000・青少年／兒童 ₩1,000', note:'直接落入海中的瀑布；途中可以停表善海邊' }),
+    P('住宿','16:40','入住 Vistacay 世界盃飯店','비스타케이호텔 월드컵', 33.2480, 126.5100, { hours:'15:00 入住 / 11:00 退房' }),
+    P('美食','17:40','오는정김밥 Oneunjeong Gimbap（外帶）★必去','오는정김밥', 33.2505, 126.5655, { hours:'09:00–19:00（13:00–14:30 休息），週日公休', note:'1985 年開業的西歸浦名店，招牌是加了炸豆皮的「오는정김밥」\n⚠️ 要先打電話預約取餐時間：064-762-8927（建議 12/1 早上就打）\n只能外帶、一次至少 2 條；超過預約時間 30 分鐘可能被取消\n就在每日偶來市場旁，拿完直接逛市場' }),
+    P('美食','18:00','每日偶來市場・李仲燮街','서귀포매일올레시장', 33.2497, 126.5638, { hours:'市場冬季營業到 20:00', note:'晚餐推薦黑豬肉 BBQ（16:30 開）或南妹家王帶魚（烤白帶魚、一人份）\n李仲燮街有小工坊可逛' }),
+  ],
+  '2026-12-02': [
+    P('景點','10:00','Dolcori Forest 돌코리숲 ★必去','돌코리숲', 33.2860, 126.3760, { hours:'10:00–18:00（17:00 停止入場）', ticket:'成人 ₩19,000・青少年 ₩16,000（雨天 ₩12,000／₩10,000）', note:'2026 年 4 月開幕的石貓主題園區\n戶外迷你火車最熱門，一進場先買火車票' }),
+    P('美食','12:30','午餐：摹瑟浦（大靜）','모슬포항', 33.2160, 126.2510, { note:'摹瑟浦港一帶有海鮮和烤魚' }),
+    P('景點','13:40','濟州秋史館 제주 추사관 ★必去','제주추사관', 33.2460, 126.2930, { hours:'約 09:00–17:30，週一休館', ticket:'免費（以現場為準）', note:'秋史金正喜流放地，〈歲寒圖〉誕生處；展館由承孝相設計，約 45 分鐘' }),
+    P('景點','14:40','🎀 分頭走①：Hello Kitty Island（Kitty 組）★必去','헬로키티아일랜드', 33.2903, 126.3633, { hours:'09:00–18:00（17:00 停止入場）', ticket:'線上約 ₩11,000–12,000 起', note:'3 層樓＋屋頂花園，約 2–3 小時' }),
+    P('景點','14:40','✈️ 分頭走②：濟州航空宇宙博物館（小男生組）★必去','제주항공우주박물관', 33.3050, 126.2890, { segFixed:'從秋史館分頭出發，開車約 15 分', hours:'09:00–18:00（17:00 停止入場）', ticket:'成人 ₩10,000・青少年 ₩9,000・兒童 ₩8,000', note:'亞洲最大航空宇宙博物館，39 架真飛機＋天文宇宙館' }),
+    P('美食','17:00','各自回西歸浦，晚餐會合','서귀포매일올레시장', 33.2497, 126.5638, { note:'兩組各自開車回西歸浦（約 30–40 分），例如在每日偶來市場一帶會合' }),
+    P('住宿','19:30','續住 Vistacay 世界盃飯店','비스타케이호텔 월드컵', 33.2480, 126.5100),
+  ],
+  '2026-12-03': [
+    P('景點','09:00','9.81 Park 重力賽車（早鳥場）★必去','9.81파크 제주', 33.3870, 126.3660, { v:1119, hours:'09:00–18:00（早鳥場 09:00–10:00，最後搭乘 09:50）', ticket: TICKET_981, links: LINKS_981, note:'08:05 從 Vistacay 出發（車程約 50 分）\n穿包鞋或平底鞋（不能穿涼鞋、拖鞋），先下載 9.81 App 綁定票券\n天候不佳時戶外項目可能暫停' }),
+    P('景點','10:40','ARTE MUSEUM 濟州 ★必去','아르떼뮤지엄 제주', 33.3967, 126.3447, { hours:'10:00–20:00（19:00 停止入場）', ticket:'成人 ₩18,000・青少年 ₩14,000・兒童 ₩11,000', note:'沉浸式媒體藝術館，約 1 小時；跟 9.81 Park 車程約 10 分\n可加購 Tea Bar 茶飲' }),
+    P('美食','12:30','午餐：O\'sulloc Tea Terrace','오설록 티뮤지엄', 33.3060, 126.2896, { note:'從 ARTE 往南開約 30 分\n抹茶拌麵、抹茶拌飯，在博物館裡吃' }),
+    P('景點','13:30','O\'sulloc 綠茶博物館 ★必去','오설록 티뮤지엄', 33.3059, 126.2894, { hours:'冬季 09:00–18:00', ticket:'免費（免費停車）', note:'必吃綠茶霜淇淋；「抹茶站」可試喝現磨抹茶\n隔壁是 Innisfree 濟州之家' }),
+    P('住宿','15:00','入住 挾才阿魯米飯店（先休息）','아루미호텔 협재점', 33.3930, 126.2440, { hours:'15:00 入住 / 11:00 退房', note:'從 O\'sulloc 開約 25 分\n放行李、休息一下，或逛挾才附近咖啡廳' }),
+    P('景點','17:00','挾才海邊看夕陽','협재해수욕장', 33.3940, 126.2390, { ticket:'免費', note:'12 月初日落約 17:20，天氣好可以看到飛揚島' }),
+    P('美食','18:00','晚餐：挾才一帶','협재 맛집', 33.3950, 126.2450, { note:'推薦「拉麵的先生包餃子的太太」韓牛水煮肉餃子火鍋（16:00–17:00 休息）' }),
+  ],
+  '2026-12-04': [
+    P('景點','09:00','挾才・金陵海邊 晨間散步','협재해수욕장', 33.3940, 126.2390, { ticket:'免費', note:'先到挾才秀烏龍門口登記排隊；天氣好可以看到飛揚島' }),
+    P('購物','11:00','Mumu Jeju 무무제주 ★必去','무무제주', 33.4300, 126.3300, { hours:'11:00–18:00，週三、四公休', note:'橘子周邊專賣店：文具、吊飾、手機周邊' }),
+    P('美食','12:20','午餐：해녀고기（海女黑豬肉）★必去','해녀고기', 33.4885, 126.4870, { hours:'12:00–21:30（約 21:00 最後點餐），全年無休', note:'由現役海女經營的黑豬肉烤肉店，店員代烤\n招牌：黑豬肉 600g＋鮑魚 2 顆、800g＋鮑魚 3 顆；也有海女抓的海鮮、海女拉麵\n在蓮洞（제주시 과원로 80），店門口可停約 3 台車\n訂位：0507-1312-8855' }),
+    P('購物','13:40','東門市場 伴手禮 ★必去','동문재래시장', 33.5122, 126.5263, { hours:'約 08:00–21:00', note:'買橘子、巧克力、海苔' }),
+    P('景點','14:30','濟州牧官衙・觀德亭 ★必去','제주목 관아', 33.5132, 126.5216, { hours:'09:00–18:00，全年無休', ticket:'成人 ₩1,500', note:'朝鮮時代濟州官府；觀德亭建於 1448 年' }),
+    P('購物','15:10','舊城文創小店散步 ★必去','더 아일랜더 제주', 33.5128, 126.5222, { note:'The Islander（10:30–19:00，濟州限定香水、香皂）\nplayworks（12:00–18:30，插畫商品）、misomiso、hogg\n時間夠再去機場附近免稅店' }),
+    P('其他','16:30','加油・還車','제주시 도령로 171-1', 33.4870, 126.4830, { note:'還車前加滿油，再搭接駁車回機場\n17:30 抵達機場報到、辦退稅' }),
+    P('航班','19:50','IT633 濟州 → 台中','제주국제공항', AIRPORT.lat, AIRPORT.lng, { flightKey:'back', segFixed:'接駁車 約 15 分', note:'21:05 抵達台中，回家囉！' }),
+  ],
+};
+
+/* ---------- 樣式 ---------- */
+const CAT_STYLE = {
+  景點:{ icon:'pin',   color:'#F2A497', soft:'#FFE6E0' },
+  住宿:{ icon:'bed',   color:'#B9DAA5', soft:'#EAF4E3' },
+  美食:{ icon:'food',  color:'#F6D27A', soft:'#FFF4D6' },
+  購物:{ icon:'bag',   color:'#F7C6D0', soft:'#FDEEF1' },
+  航班:{ icon:'plane', color:'#A8D3E6', soft:'#E6F3F9' },
+  其他:{ icon:'spark', color:'#E5DCCF', soft:'#F5F0E8' },
+};
+const EXP_STYLE = {
+  交通:{ icon:'car',   color:'#A8D3E6' },
+  飲食:{ icon:'food',  color:'#F6D27A' },
+  住宿:{ icon:'bed',   color:'#B9DAA5' },
+  門票:{ icon:'ticket',color:'#F2A497' },
+  購物:{ icon:'bag',   color:'#F7C6D0' },
+  其他:{ icon:'spark', color:'#E5DCCF' },
+};
+
+/* ---------- ICON（線條風 SVG） ---------- */
+const ICONS = {
+  pin:'<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.5h.01" stroke-width="2.4"/>',
+  basket:'<path d="M3.5 10h17"/><path d="M5 10l1.6 9.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L19 10"/><path d="M8.5 10L11 4.5M15.5 10L13 4.5"/><path d="M9.5 14v2.5M14.5 14v2.5"/>',
+  money:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.8"/><path d="M6 9.5v.01M18 14.5v.01" stroke-width="2.4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  edit:'<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/>',
+  grip:'<path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01" stroke-width="2.8"/>',
+  walk:'<circle cx="13" cy="4.5" r="1.6"/><path d="M9.5 21l2.2-6.2L14.5 17v4"/><path d="M8 12l2.5-4h3l2.5 3.5 2 .5"/><path d="M10.5 8l1.2 6.8"/>',
+  car:'<path d="M4 16.5v-3l1.6-4.3A2 2 0 0 1 7.5 8h9a2 2 0 0 1 1.9 1.2L20 13.5v3"/><path d="M3 16.5h18v1.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M4.5 13.5h15"/><circle cx="7.5" cy="16" r=".6"/><circle cx="16.5" cy="16" r=".6"/>',
+  bus:'<rect x="5" y="3.5" width="14" height="14" rx="3"/><path d="M5 10.5h14"/><path d="M8 20.5v-3M16 20.5v-3"/><path d="M8.5 14h.01M15.5 14h.01" stroke-width="2.4"/>',
+  ferry:'<path d="M3 17c1.5 1.3 3 1.3 4.5 0s3-1.3 4.5 0 3 1.3 4.5 0 3-1.3 4.5 0"/><path d="M5 14l1-5h12l1 5"/><path d="M9 9V6h6v3"/>',
+  bed:'<path d="M3 18.5V6.5M3 14h18v4.5M21 14v-1.5a3 3 0 0 0-3-3h-7.5V14"/><circle cx="6.8" cy="11.2" r="1.7"/>',
+  food:'<path d="M3.5 11.5h17a8.5 8.5 0 0 1-17 0z"/><path d="M9 3.5c0 1.8 1.5 2.2 1.5 4M13.5 3.5c0 1.8 1.5 2.2 1.5 4"/>',
+  bag:'<path d="M5.5 8h13l-1 12.5h-11z"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5"/>',
+  plane:'<path d="M21 15.5v-1.8l-7.5-4.7V4.5a1.5 1.5 0 0 0-3 0V9L3 13.7v1.8l7.5-2.3v4.6l-2 1.5v1.4L12 19.8l3.5.9v-1.4l-2-1.5v-4.6z"/>',
+  spark:'<path d="M12 3.5l2 5.5 5.5 2-5.5 2-2 5.5-2-5.5L4.5 11l5.5-2z"/>',
+  nav:'<path d="M4 11.5L20 4l-7.5 16-1.8-6.7z"/>',
+  phone:'<path d="M5.5 4h3l1.8 4.5-2.1 1.3a11 11 0 0 0 6 6l1.3-2.1L20 15.5v3a2 2 0 0 1-2.2 2A16 16 0 0 1 3.5 6.2 2 2 0 0 1 5.5 4z"/>',
+  trash:'<path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l.8 12.2a1 1 0 0 0 1 .8h7.4a1 1 0 0 0 1-.8L17.5 7M9 7V4.5h6V7"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  camera:'<path d="M4 8h3l1.8-2.5h6.4L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.5"/>',
+  ticket:'<path d="M3.5 8.5V6.5h17v2a2.5 2.5 0 0 0 0 5v2h-17v-2a2.5 2.5 0 0 0 0-5z" transform="translate(0 1)"/><path d="M14 7.5v9" stroke-dasharray="2 2"/>',
+  shirt:'<path d="M8.5 4L4 6.5l1.8 4L7.5 10v10h9V10l1.7.5 1.8-4L15.5 4c-.6 1.5-1.9 2.4-3.5 2.4S9.1 5.5 8.5 4z"/>',
+  chev:'<path d="M6 9l6 6 6-6"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  cloud:'<path d="M7 18.5a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 17.6 9 4.8 4.8 0 0 1 17 18.5z"/>',
+  rain:'<path d="M7 15a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 17.6 5.5 4.8 4.8 0 0 1 17 15z"/><path d="M8.5 18.5l-1 2.5M12.5 18.5l-1 2.5M16.5 18.5l-1 2.5"/>',
+  snow:'<path d="M7 15a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 17.6 5.5 4.8 4.8 0 0 1 17 15z"/><path d="M8 19h.01M12 20.5h.01M16 19h.01M10 22h.01M14 22h.01" stroke-width="2.6"/>',
+};
+const icon = (name, cls = 'w-5 h-5') =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="${cls}">${ICONS[name] || ''}</svg>`;
+
+/* ---------- 工具 ---------- */
+const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const toDate = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const addDays = (s, n) => { const d = toDate(s); d.setDate(d.getDate()+n); return ymd(d); };
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function haversine(a, b) {
+  const R = 6371, r = x => x * Math.PI / 180;
+  const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+  const s = Math.sin(dLat/2)**2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+const MODE = {
+  walk:{ icon:'walk', label:'步行',   calc: km => km / 4.5 * 60 },
+  car: { icon:'car',  label:'開車',   calc: km => km / 38 * 60 + 4 },
+};
+/* 日出時間（NOAA 演算法，韓國時間 KST） */
+function sunriseKST(dateStr, lat, lng) {
+  const rad = Math.PI / 180, deg = 180 / Math.PI;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const N = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 0)) / 864e5);
+  const lngHour = lng / 15;
+  const t = N + (6 - lngHour) / 24;
+  const M = 0.9856 * t - 3.289;
+  let L = M + 1.916 * Math.sin(M * rad) + 0.020 * Math.sin(2 * M * rad) + 282.634;
+  L = ((L % 360) + 360) % 360;
+  let RA = deg * Math.atan(0.91764 * Math.tan(L * rad));
+  RA = ((RA % 360) + 360) % 360;
+  RA += Math.floor(L / 90) * 90 - Math.floor(RA / 90) * 90;
+  RA /= 15;
+  const sinDec = 0.39782 * Math.sin(L * rad), cosDec = Math.cos(Math.asin(sinDec));
+  const cosH = (Math.cos(90.833 * rad) - sinDec * Math.sin(lat * rad)) / (cosDec * Math.cos(lat * rad));
+  const H = (360 - deg * Math.acos(cosH)) / 15;
+  const T = H + RA - 0.06571 * t - 6.622;
+  const UT = ((T - lngHour) % 24 + 24) % 24;
+  return Math.round(((UT + 9) % 24) * 60);
+}
+const hhmm = x => `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(((x % 60) + 60) % 60).padStart(2, '0')}`;
+const SEONGSAN_PEAK = { lat: 33.4581, lng: 126.9425 };
+function sunriseInfo(dateStr) {
+  const sr = sunriseKST(dateStr, SEONGSAN_PEAK.lat, SEONGSAN_PEAK.lng);
+  return { sunrise: hhmm(sr), climb: hhmm(sr - 50), leave: hhmm(sr - 70) };
+}
+
+const fmtMin = m => m < 60 ? `${Math.max(1, Math.round(m))} 分` : `${Math.floor(m/60)} 小時 ${Math.round(m%60)} 分`;
+
+function weatherKind(code) {
+  if (code == null) return 'cloud';
+  if (code <= 1) return 'sun';
+  if ([71,73,75,77,85,86].includes(code)) return 'snow';
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95) return 'rain';
+  return 'cloud';
+}
+const WEATHER_DESC = { sun:'晴朗', cloud:'多雲', rain:'有雨', snow:'下雪' };
+
+/* 壓縮照片，避免 localStorage 爆量 */
+function compressImage(file, max = 720, q = 0.72) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', q));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* =========================================================
+   Vue App
+   ========================================================= */
+createApp({
+  setup() {
+    /* ---------- 讀取儲存資料 ---------- */
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
+
+    const days = reactive(saved?.days || clone(DEFAULT_DAYS));
+    DATES.forEach(d => { if (!days[d]) days[d] = []; });
+    // 11/19：加入 오는정김밥（12/1）、해녀고기（12/4）
+    (function addNewShops() {
+      const d1 = days['2026-12-01'];
+      if (d1 && !d1.some(i => i.query === '오는정김밥')) {
+        const it = clone(DEFAULT_DAYS['2026-12-01'].find(i => i.query === '오는정김밥'));
+        let k = d1.findIndex(i => i.time && i.time > it.time); if (k < 0) k = d1.length;
+        d1.splice(k, 0, it);
+      }
+      const d4 = days['2026-12-04'];
+      if (d4 && !d4.some(i => i.query === '해녀고기')) days['2026-12-04'] = clone(DEFAULT_DAYS['2026-12-04']);
+    })();
+    // 每次打開都補上門票（沒填或寫「請見官網」的景點）
+    Object.values(days).forEach(arr => arr.forEach(i => {
+      if (i.cat === '景點' && TICKETS[i.query] && (!i.ticket || i.ticket.includes('請見官網'))) i.ticket = TICKETS[i.query];
+      if (i.query === '9.81파크 제주' && !i.links) { i.links = clone(LINKS_981); i.ticket = TICKET_981; }
+    }));
+    // 11/19：移除項坡頭里；12/3 換成新順序（只執行一次）
+    try {
+      const d4 = days['2026-12-04'];
+      if (d4) { const k = d4.findIndex(i => i.query === '항파두리 항몽유적지'); if (k >= 0) d4.splice(k, 1); }
+      // 12/3 只要還是舊版排法（9.81 卡片沒有新版標記），就換成新順序
+      const d3 = days['2026-12-03'] || [];
+      const p981 = d3.find(i => i.query === '9.81파크 제주');
+      if (!d3.length || (p981 && !p981.v)) days['2026-12-03'] = clone(DEFAULT_DAYS['2026-12-03']);
+    } catch (e) {}
+    // 舊資料補上新功能（不會動到你自己新增或修改的內容）
+    (function migrate() {
+      const FERRY_URL = 'https://chengshan.kr/zh-hant';
+      const d29 = days['2026-11-29'];
+      if (d29 && !d29.some(i => i.link?.url === FERRY_URL)) {
+        const def = DEFAULT_DAYS['2026-11-29'].find(i => i.link?.url === FERRY_URL);
+        if (def) d29.push(clone(def));
+      }
+      if (d29 && !d29.some(i => i.sunriseFor)) {
+        const def = DEFAULT_DAYS['2026-11-29'].find(i => i.sunriseFor);
+        if (def) d29.push(clone(def));
+      }
+      const port = (days['2026-11-30'] || []).find(i => i.name.includes('城山港'));
+      if (port && !port.link) port.link = { label:'城山此刻：查渡輪是否開船', url: FERRY_URL };
+    })();
+    const shopping = reactive(saved?.shopping || []);
+    const expenses = reactive(saved?.expenses || []);
+    const info = reactive(saved?.info || clone(DEFAULT_INFO));
+
+    const persist = () => {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify({ days, shopping, expenses, info })); }
+      catch (e) { showToast('儲存空間已滿，請刪除部分照片'); }
+    };
+    watch([days, shopping, expenses, info], persist, { deep: true });
+
+    /* ---------- 分頁 ---------- */
+    const tabs = [
+      { key:'plan',  icon:'pin',    label:'每日行程' },
+      { key:'info',  icon:'info',   label:'資訊' },
+      { key:'shop',  icon:'basket', label:'購物清單' },
+      { key:'money', icon:'money',  label:'花費' },
+    ];
+    const tab = ref('plan');
+    const switchTab = k => { tab.value = k; window.scrollTo({ top: 0, behavior: 'smooth' }); if (k === 'plan') nextTick(initSortable); };
+
+    /* ---------- 日期 ---------- */
+    const today = ymd(new Date());
+    const curDate = ref(DATES.includes(today) ? today : DATES[0]);
+    const weekday = d => WD[toDate(d).getDay()];
+    const dayNum = d => toDate(d).getDate();
+    const md = d => `${toDate(d).getMonth()+1}/${toDate(d).getDate()}`;
+    const fmtFull = d => `${md(d)} (${weekday(d)})`;
+    const nights = h => Math.round((toDate(h.checkout) - toDate(h.checkin)) / 864e5);
+    const selectDate = d => { curDate.value = d; catFilter.value = '全部'; nextTick(initSortable); };
+    const hotelTonight = d => info.hotels.find(h => h.checkin <= d && h.checkout > d);
+    const hotelLastNight = d => hotelTonight(addDays(d, -1));
+
+    /* ---------- 行程列表 ---------- */
+    const catFilter = ref('全部');
+    const curItems = computed(() => days[curDate.value] || []);
+    const visibleItems = computed(() => catFilter.value === '全部' ? curItems.value : curItems.value.filter(i => i.cat === catFilter.value));
+    const hasHours = c => ['景點','住宿','美食','購物'].includes(c);
+    const flightOf = item => {
+      if (item.flightKey && info.flights[item.flightKey]) return info.flights[item.flightKey];
+      return { dir:'航班', airline:'', code:item.name, from:'—', to:'—', fromName:'', toName:'', dep:item.time || '', arr:'', duration:'', date:md(curDate.value), navQuery:item.query || item.name };
+    };
+
+    /* 交通時間：上一個行程 → 這個行程；每日第一個從前一晚飯店出發 */
+    const segments = computed(() => {
+      const items = curItems.value;
+      return items.map((item, i) => {
+        let from = null, fromLabel = '';
+        if (i === 0) {
+          if (item.cat === '航班' && item.flightKey === 'out') return null;
+          const h = hotelLastNight(curDate.value);
+          if (!h) return null;
+          from = h; fromLabel = h.short;
+        } else {
+          from = items[i-1];
+        }
+        if (item.segFixed && i > 0) return { icon: item.segFixed.includes('渡輪') ? 'ferry' : 'car', text: item.segFixed, fixed: true };
+        if (from?.lat == null || item.lat == null) return { icon:'car', text:'無法估算（請填 Naver 關鍵字）', from: fromLabel };
+        const road = haversine(from, item) * 1.35;
+        if (road < 0.08) return { icon:'walk', text:'同一地點', from: fromLabel };
+        const mode = MODE[item.mode] ? item.mode : (road < 1.2 ? 'walk' : 'car');
+        const m = MODE[mode];
+        return { icon: m.icon, text: `${m.label} 約 ${fmtMin(m.calc(road))} · ${road.toFixed(1)} km`, from: fromLabel };
+      });
+    });
+    const cycleMode = item => {
+      const seg = segments.value[curItems.value.indexOf(item)];
+      if (!seg || seg.fixed) return;
+      const cur = seg.icon === 'walk' ? 'walk' : 'car';
+      item.mode = cur === 'walk' ? 'car' : 'walk';
+      showToast(`已切換為 ${MODE[item.mode].label}`);
+    };
+
+    function resetDay() {
+      if (!window.confirm(`確定把 ${fmtFull(curDate.value)} 還原成預設行程嗎？這天自己新增或修改的內容會被取代。`)) return;
+      days[curDate.value] = clone(DEFAULT_DAYS[curDate.value] || []);
+      showToast('已還原這一天的行程');
+      nextTick(initSortable);
+    }
+
+    /* ---------- 拖曳排序 ---------- */
+    const listEl = ref(null);
+    let sortable = null;
+    function initSortable() {
+      if (sortable) { sortable.destroy(); sortable = null; }
+      if (!listEl.value || catFilter.value !== '全部' || tab.value !== 'plan') return;
+      sortable = Sortable.create(listEl.value, {
+        handle: '.drag-handle', animation: 220, delay: 80, delayOnTouchOnly: true,
+        onStart(evt) { evt.item._origNext = evt.item.nextSibling; },
+        onEnd(evt) {
+          const { oldIndex, newIndex, item, from } = evt;
+          if (oldIndex === newIndex) return;
+          // 還原 DOM，交給 Vue 重新渲染
+          from.insertBefore(item, item._origNext);
+          const arr = days[curDate.value];
+          const [moved] = arr.splice(oldIndex, 1);
+          arr.splice(newIndex, 0, moved);
+          showToast('已重新排序，交通時間已更新');
+        },
+      });
+    }
+    watch(catFilter, () => nextTick(initSortable));
+
+    /* ---------- Naver Map ---------- */
+    /* ---------- 맛집 搜尋 ---------- */
+    const REGIONS = [
+      { ko:'제주시 연동', zh:'蓮洞', lat:33.4880, lng:126.4930 },
+      { ko:'제주시 노형동', zh:'老衡洞', lat:33.4830, lng:126.4780 },
+      { ko:'제주 용담동', zh:'龍潭洞', lat:33.5130, lng:126.5100 },
+      { ko:'제주 동문시장', zh:'東門市場', lat:33.5122, lng:126.5263 },
+      { ko:'제주시 오등동', zh:'吾等洞', lat:33.4720, lng:126.5450 },
+      { ko:'조천읍 선흘리', zh:'善屹里', lat:33.5100, lng:126.7100 },
+      { ko:'구좌읍 송당리', zh:'松堂', lat:33.4630, lng:126.7700 },
+      { ko:'구좌읍 평대리', zh:'坪岱', lat:33.5320, lng:126.8380 },
+      { ko:'구좌읍 월정리', zh:'月汀里', lat:33.5560, lng:126.7960 },
+      { ko:'구좌읍 김녕리', zh:'金寧', lat:33.5560, lng:126.7560 },
+      { ko:'함덕', zh:'咸德', lat:33.5430, lng:126.6690 },
+      { ko:'성산읍 성산리', zh:'城山', lat:33.4620, lng:126.9330 },
+      { ko:'성산읍 시흥리', zh:'始興里', lat:33.4880, lng:126.9080 },
+      { ko:'성산읍 고성리', zh:'涉地可支', lat:33.4400, lng:126.9150 },
+      { ko:'우도', zh:'牛島', lat:33.5050, lng:126.9520 },
+      { ko:'표선면 성읍리', zh:'城邑', lat:33.3880, lng:126.8000 },
+      { ko:'표선', zh:'表善', lat:33.3260, lng:126.8350 },
+      { ko:'서귀포 올레시장', zh:'西歸浦市區', lat:33.2490, lng:126.5630 },
+      { ko:'서귀포 월드컵경기장', zh:'世界盃體育場', lat:33.2470, lng:126.5100 },
+      { ko:'중문', zh:'中文', lat:33.2500, lng:126.4120 },
+      { ko:'안덕면', zh:'安德', lat:33.2880, lng:126.3600 },
+      { ko:'모슬포', zh:'摹瑟浦', lat:33.2160, lng:126.2510 },
+      { ko:'대정읍', zh:'大靜', lat:33.2450, lng:126.2900 },
+      { ko:'서광리 오설록', zh:'西廣里', lat:33.3060, lng:126.2900 },
+      { ko:'애월읍', zh:'涯月', lat:33.4630, lng:126.3200 },
+      { ko:'애월 봉성리', zh:'鳳城里', lat:33.4300, lng:126.3300 },
+      { ko:'한림읍 협재', zh:'挾才', lat:33.3940, lng:126.2400 },
+      { ko:'한림읍', zh:'翰林', lat:33.4110, lng:126.2650 },
+    ];
+    function nearestRegion(lat, lng) {
+      let best = null, bd = Infinity;
+      REGIONS.forEach(r => { const d = haversine({ lat, lng }, r); if (d < bd) { bd = d; best = r; } });
+      return bd < 15 ? best : null;
+    }
+    const regionOf = item => (item.lat != null && nearestRegion(item.lat, item.lng)) || { ko:'제주', zh:'濟州' };
+    function openMatjip(region) {
+      openNaver(`${region.ko} 맛집`);
+    }
+    /* CATCHTABLE 國際版：先複製韓文店名，再開 App（未安裝則到商店下載） */
+    async function openCatchtable(item) {
+      const name = (item.query || item.name).trim();
+      try { await navigator.clipboard.writeText(name); showToast(`已複製「${name}」，到 CATCHTABLE 貼上搜尋`); }
+      catch (e) { showToast(`在 CATCHTABLE 搜尋：${name}`); }
+      const ua = navigator.userAgent;
+      const url = /Android/i.test(ua)
+        ? 'https://play.google.com/store/search?q=CATCH%20TABLE%20Global&c=apps'
+        : 'https://apps.apple.com/app/id1639046576';
+      setTimeout(() => window.open(url, '_blank'), 900);
+    }
+    /* 飯店附近：大創／運動用品／桌球館（Naver Map 即時搜尋） */
+    const NEARBY = [
+      { key:'cu',    emoji:'🏪', label:'CU',       kw:'CU 편의점',  bg:'#F0E9F7', color:'#8A5FB5' },
+      { key:'gs25',  emoji:'🏪', label:'GS25',     kw:'GS25',       bg:'#E4F1FA', color:'#3E86B5' },
+      { key:'cafe',  emoji:'☕', label:'咖啡廳',   kw:'카페',       bg:'#F4ECE3', color:'#9A6B45' },
+      { key:'emart', emoji:'🛍', label:'E-mart',   kw:'이마트',     bg:'#FFF4CF', color:'#B88A14',
+        fixed:{ '제주시 연동':'이마트 신제주점', '서귀포 성산':'이마트 서귀포점', '서귀포시':'이마트 서귀포점', '제주 한림':'이마트 신제주점' } },
+      { key:'mart',  emoji:'🧺', label:'超市',     kw:'마트',       bg:'#EAF4EC', color:'#4E9460',
+        fixed:{ '서귀포 성산':'성산 하나로마트', '제주 한림':'한림 하나로마트' } },
+      { key:'daiso', emoji:'🛒', label:'大創',     kw:'다이소',     bg:'#FDECEF', color:'#D0566E' },
+      { key:'sport', emoji:'👟', label:'運動用品', kw:'스포츠용품', bg:'#E6EFF6', color:'#5C82B5' },
+      { key:'tt',    emoji:'🏓', label:'桌球館',   kw:'탁구장',     bg:'#E9F1E6', color:'#6E8F69' },
+    ];
+    const NEAR_ME = NEARBY.filter(n => ['cu','gs25','cafe','mart','daiso'].includes(n.key));
+    const HOTEL_AREAS = [
+      { ko:'제주시 연동', zh:'蓮洞・新濟州', lat:33.4880, lng:126.4925 },
+      { ko:'서귀포 성산', zh:'城山', lat:33.4690, lng:126.9310 },
+      { ko:'서귀포시', zh:'西歸浦', lat:33.2480, lng:126.5100 },
+      { ko:'제주 한림', zh:'翰林・挾才', lat:33.3930, lng:126.2440 },
+    ];
+    const areaOf = h => {
+      let best = HOTEL_AREAS[0], bd = Infinity;
+      HOTEL_AREAS.forEach(a => { const d = haversine(h, a); if (d < bd) { bd = d; best = a; } });
+      return best;
+    };
+    function openNearby(n, h) {
+      const a = areaOf(h);
+      showToast(`搜尋${a.zh}附近的${n.label}`);
+      openNaver(n.fixed?.[a.ko] || `${a.ko} ${n.kw}`);
+    }
+    const locating = ref(false);
+    function searchNearMe(n) {
+      const kw = n.kw, label = n.label;
+      if (!navigator.geolocation) { openNaver(kw); return; }
+      locating.value = true;
+      navigator.geolocation.getCurrentPosition(pos => {
+        locating.value = false;
+        const r = nearestRegion(pos.coords.latitude, pos.coords.longitude);
+        if (r) { showToast(`搜尋 ${r.zh} 附近的${label}`); openNaver(`${r.ko} ${kw}`); }
+        else openNaver(kw);   // 不在濟州時：Naver Map App 會以目前位置搜尋
+      }, () => {
+        locating.value = false;
+        openNaver(kw);
+      }, { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 });
+    }
+    const nearbyMatjip = () => searchNearMe({ kw:'맛집', label:' 맛집' });
+
+    function openNaver(q) {
+      if (!q) return;
+      const query = encodeURIComponent(q);
+      const web = `https://map.naver.com/p/search/${query}`;
+      const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (!mobile) { window.open(web, '_blank'); return; }
+      const start = Date.now();
+      window.location.href = `nmap://search?query=${query}&appname=jeju.trip.webapp`;
+      setTimeout(() => { if (document.visibilityState === 'visible' && Date.now() - start < 2500) window.location.href = web; }, 1400);
+    }
+
+    /* ---------- 地點定位（新增行程時自動抓座標） ---------- */
+    async function geocode(q) {
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&accept-language=ko&q=${encodeURIComponent(q)}`);
+        const j = await r.json();
+        if (j[0]) return { lat: +j[0].lat, lng: +j[0].lon };
+      } catch (e) {}
+      return null;
+    }
+
+    /* ---------- 天氣（Open-Meteo，免金鑰） ---------- */
+    const weatherCache = reactive({});
+    async function loadWeather(lat, lng) {
+      const key = `${lat.toFixed(1)},${lng.toFixed(1)}`;
+      if (weatherCache[key]) return;
+      weatherCache[key] = { loading: true };
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,wind_speed_10m_max,precipitation_probability_max&timezone=Asia%2FSeoul&forecast_days=16`;
+        const j = await (await fetch(url)).json();
+        weatherCache[key] = j;
+      } catch (e) { weatherCache[key] = { error: true }; }
+    }
+    const dayLoc = computed(() => {
+      const it = curItems.value.find(i => i.lat != null && i.cat !== '航班') || hotelTonight(curDate.value) || AIRPORT;
+      return { lat: it.lat, lng: it.lng };
+    });
+    watch(dayLoc, l => loadWeather(l.lat, l.lng), { immediate: true });
+    const curWeather = computed(() => {
+      const l = dayLoc.value;
+      const w = weatherCache[`${l.lat.toFixed(1)},${l.lng.toFixed(1)}`];
+      const place = l.lat < 33.33 ? '西歸浦' : (l.lng > 126.75 ? '濟州東部' : (l.lng < 126.4 ? '濟州西部' : '濟州市'));
+      const base = { kind:'cloud', temp:'--°', feel:'--°', label:'讀取天氣中…', place, desc:'' };
+      if (!w || w.loading) return base;
+      if (w.error || !w.daily) return { ...base, label:'天氣暫時無法取得' };
+      const idx = w.daily.time.indexOf(curDate.value);
+      if (curDate.value === today && w.current) {
+        const k = weatherKind(w.current.weather_code);
+        return { kind:k, temp:`${Math.round(w.current.temperature_2m)}°`, feel:`${Math.round(w.current.apparent_temperature)}°`, label:`今日 ${Math.round(w.daily.temperature_2m_min[0])}° – ${Math.round(w.daily.temperature_2m_max[0])}°`, place, desc:WEATHER_DESC[k] };
+      }
+      if (idx >= 0) {
+        const k = weatherKind(w.daily.weather_code[idx]);
+        return { kind:k, temp:`${Math.round(w.daily.temperature_2m_max[idx])}°`, feel:`${Math.round(w.daily.apparent_temperature_min[idx])}°~${Math.round(w.daily.apparent_temperature_max[idx])}°`, label:`預報 最低 ${Math.round(w.daily.temperature_2m_min[idx])}° / 最高 ${Math.round(w.daily.temperature_2m_max[idx])}°`, place, desc:WEATHER_DESC[k] };
+      }
+      if (!w.current) return { ...base, label:'出發前 16 天內會顯示當日預報' };
+      const k = weatherKind(w.current.weather_code);
+      return { kind:k, temp:`${Math.round(w.current.temperature_2m)}°`, feel:`${Math.round(w.current.apparent_temperature)}°`, label:'目前實況（出發前 16 天內顯示當日預報）', place, desc:WEATHER_DESC[k] };
+    });
+
+    /* ---------- 今日穿搭 ---------- */
+    const outfit = computed(() => {
+      const l = dayLoc.value;
+      const w = weatherCache[`${l.lat.toFixed(1)},${l.lng.toFixed(1)}`];
+      const idx = w?.daily ? w.daily.time.indexOf(curDate.value) : -1;
+      let feel, wind = null, rainP = null, kind = 'cloud', source;
+      if (idx >= 0) {
+        feel = w.daily.apparent_temperature_min[idx];
+        wind = w.daily.wind_speed_10m_max?.[idx];
+        rainP = w.daily.precipitation_probability_max?.[idx];
+        kind = weatherKind(w.daily.weather_code[idx]);
+        source = '依當日預報';
+      } else {
+        feel = 4; wind = 30; source = '依往年 11 月底–12 月初氣候（白天 10–15°C、早晚 5–8°C、風大）';
+      }
+      let layers;
+      if (feel <= 2)       layers = ['發熱衣', '毛衣／刷毛衛衣', '羽絨外套', '毛帽・圍巾・手套'];
+      else if (feel <= 7)  layers = ['發熱衣', '針織衫／衛衣', '防風外套或薄羽絨', '圍巾・手套'];
+      else if (feel <= 12) layers = ['長袖上衣', '薄毛衣', '防風外套'];
+      else                 layers = ['長袖上衣', '輕薄外套'];
+      const tips = [];
+      if (kind === 'rain' || kind === 'snow' || (rainP != null && rainP >= 50)) tips.push(`降雨機率${rainP != null ? ' ' + rainP + '%' : '高'}：帶摺疊傘，外套選防潑水`);
+      if (wind != null && wind >= 25) tips.push('海風很強：外套要能擋風，帽子選有帽繩或毛帽');
+      if (DAY_WEAR[curDate.value]) tips.push(DAY_WEAR[curDate.value]);
+      return { layers, tips, source, feel: Math.round(feel) };
+    });
+
+    /* ---------- 匯率（open.er-api.com，每日更新） ---------- */
+    const fx = reactive({ cur:'KRW', amount:'', rates:null, status:'讀取匯率中…' });
+    async function loadFx() {
+      try {
+        const cached = JSON.parse(localStorage.getItem('fx-cache') || 'null');
+        if (cached && cached.day === today) { fx.rates = cached.rates; fx.status = `匯率日期 ${cached.date}`; return; }
+        const j = await (await fetch('https://open.er-api.com/v6/latest/TWD')).json();
+        if (j.result !== 'success') throw 0;
+        fx.rates = j.rates;
+        const date = new Date(j.time_last_update_unix * 1000).toLocaleDateString('zh-TW');
+        fx.status = `匯率日期 ${date}`;
+        localStorage.setItem('fx-cache', JSON.stringify({ day: today, rates: j.rates, date }));
+      } catch (e) {
+        fx.rates = { KRW: 45.5, JPY: 4.7, USD: 0.031 };
+        fx.status = '離線中，使用參考匯率';
+      }
+    }
+    const fxUnit = computed(() => fx.rates ? (1 / fx.rates[fx.cur]).toFixed(fx.cur === 'USD' ? 2 : 4) : '-');
+    const fxResult = computed(() => {
+      const a = parseFloat(fx.amount);
+      if (!fx.rates || !a) return '0';
+      return Math.round(a / fx.rates[fx.cur]).toLocaleString();
+    });
+    const fxQuick = computed(() => fx.cur === 'KRW' ? [1000, 5000, 10000, 50000] : fx.cur === 'JPY' ? [100, 1000, 5000, 10000] : [1, 10, 50, 100]);
+    const krwToTwd = v => fx.rates ? Math.round((+v || 0) / fx.rates.KRW) : 0;
+
+    /* ---------- 花費 ---------- */
+    const totalKRW = computed(() => expenses.reduce((s, e) => s + (+e.amount || 0), 0));
+    const sumBy = pay => expenses.filter(e => e.pay === pay).reduce((s, e) => s + (+e.amount || 0), 0);
+    const catSum = c => expenses.filter(e => e.cat === c).reduce((s, e) => s + (+e.amount || 0), 0);
+    const expenseGroups = computed(() => {
+      const map = {};
+      expenses.forEach(e => { (map[e.date] ||= []).push(e); });
+      return Object.keys(map).sort().reverse().map(date => ({ date, items: map[date], total: map[date].reduce((s, e) => s + (+e.amount || 0), 0) }));
+    });
+
+    /* ---------- 彈出視窗 ---------- */
+    const sheet = ref(null);
+    const form = reactive({});
+    const confirmDelete = ref(false);
+    const resetForm = obj => { Object.keys(form).forEach(k => delete form[k]); Object.assign(form, obj); };
+    const sheetTitle = computed(() => {
+      const s = sheet.value; if (!s) return '';
+      return { item: s.editing ? '編輯行程' : '新增行程', shop: s.editing ? '編輯商品' : '新增購物', expense: s.editing ? '編輯花費' : '新增花費', hotel:'編輯住宿', rental:'編輯租車資訊', flight:'編輯航班' }[s.type];
+    });
+
+    function openSheet(type, target) {
+      confirmDelete.value = false;
+      if (type === 'item') {
+        resetForm(target ? clone(target) : { cat:'景點', name:'', time:'', hours:'', ticket:'', note:'', query:'' });
+        sheet.value = { type, editing: !!target, target };
+      } else if (type === 'shop') {
+        resetForm(target ? clone(target) : { name:'', photo:'', note:'', done:false });
+        sheet.value = { type, editing: !!target, target };
+      } else if (type === 'expense') {
+        resetForm(target ? clone(target) : { cat:'飲食', name:'', date: today, amount:'', pay:'現金', note:'' });
+        sheet.value = { type, editing: !!target, target };
+      } else if (type === 'hotel') {
+        resetForm(clone(info.hotels[target])); sheet.value = { type, index: target };
+      } else if (type === 'rental') {
+        resetForm(clone(info.rental)); sheet.value = { type };
+      } else if (type === 'flight') {
+        resetForm(clone(info.flights)); sheet.value = { type };
+      }
+    }
+    const closeSheet = () => { sheet.value = null; confirmDelete.value = false; };
+    const editItem = item => openSheet('item', item);
+    const onFab = () => openSheet(tab.value === 'plan' ? 'item' : tab.value === 'shop' ? 'shop' : 'expense');
+
+    async function saveItem() {
+      if (!form.name.trim()) return showToast('請輸入名稱');
+      const s = sheet.value;
+      const arr = days[curDate.value];
+      const data = clone(form);
+      let target;
+      if (s.editing) {
+        target = arr.find(i => i.id === s.target.id);
+        const queryChanged = target.query !== data.query || target.name !== data.name;
+        Object.assign(target, data);
+        if (queryChanged && !target.flightKey) { target.lat = null; target.lng = null; }
+      } else {
+        target = reactive({ ...data, id: uid(), lat: null, lng: null });
+        // 依時間插入
+        let pos = arr.length;
+        if (data.time) { const k = arr.findIndex(i => i.time && i.time > data.time); if (k >= 0) pos = k; }
+        arr.splice(pos, 0, target);
+        target = arr[pos];
+      }
+      closeSheet();
+      showToast('已儲存');
+      if (target.lat == null && target.cat !== '航班') {
+        const loc = await geocode(target.query || target.name);
+        if (loc) { target.lat = loc.lat; target.lng = loc.lng; showToast('已定位，交通時間重新計算'); }
+      }
+      nextTick(initSortable);
+    }
+    async function onPhoto(e) {
+      const f = e.target.files?.[0]; if (!f) return;
+      try { form.photo = await compressImage(f); } catch (err) { showToast('照片讀取失敗'); }
+    }
+    function saveShop() {
+      if (!form.name.trim()) return showToast('請輸入商品名稱');
+      const s = sheet.value;
+      if (s.editing) Object.assign(shopping.find(x => x.id === s.target.id), clone(form));
+      else shopping.unshift({ ...clone(form), id: uid() });
+      closeSheet(); showToast('已儲存');
+    }
+    function saveExpense() {
+      if (!form.name.trim() || !form.amount) return showToast('請輸入名稱與金額');
+      const s = sheet.value;
+      const data = { ...clone(form), amount: +form.amount };
+      if (s.editing) Object.assign(expenses.find(x => x.id === s.target.id), data);
+      else expenses.unshift({ ...data, id: uid() });
+      closeSheet(); showToast('已記帳');
+    }
+    function saveInfo() {
+      const s = sheet.value;
+      if (s.type === 'hotel') Object.assign(info.hotels[s.index], clone(form));
+      if (s.type === 'rental') Object.assign(info.rental, clone(form));
+      if (s.type === 'flight') { Object.assign(info.flights.out, clone(form.out)); Object.assign(info.flights.back, clone(form.back)); }
+      closeSheet(); showToast('已儲存');
+    }
+    function doDelete() {
+      const s = sheet.value;
+      const remove = (arr, id) => { const k = arr.findIndex(x => x.id === id); if (k >= 0) arr.splice(k, 1); };
+      if (s.type === 'item') remove(days[curDate.value], s.target.id);
+      if (s.type === 'shop') remove(shopping, s.target.id);
+      if (s.type === 'expense') remove(expenses, s.target.id);
+      closeSheet(); showToast('已刪除');
+      nextTick(initSortable);
+    }
+
+    /* ---------- 出發倒數 ---------- */
+    const DEPART_AT = Date.parse('2026-11-28T07:00:00+08:00');   // IT632 台中起飛
+    const HOME_AT   = Date.parse('2026-12-04T21:05:00+08:00');   // IT633 抵達台中
+    const nowTs = ref(Date.now());
+    setInterval(() => { nowTs.value = Date.now(); }, 1000);
+    const pad2 = n => String(n).padStart(2, '0');
+    const cd = computed(() => {
+      const t = nowTs.value;
+      if (t < DEPART_AT) {
+        const sec = Math.floor((DEPART_AT - t) / 1000);
+        return { mode:'before', d: Math.floor(sec / 86400), h: Math.floor(sec % 86400 / 3600), m: Math.floor(sec % 3600 / 60), s: sec % 60, label:'距離 IT632 起飛還有' };
+      }
+      if (t < HOME_AT) {
+        const k = DATES.indexOf(ymd(new Date()));
+        return { mode:'during', label: `✈ 旅程第 ${k >= 0 ? k + 1 : 1} 天・今天也玩得開心！` };
+      }
+      return { mode:'after', label:'旅程結束，歡迎回家 ♡' };
+    });
+    const cdBoxes = computed(() => [
+      { v: cd.value.d,        u:'天', bg:'#F2A497' },
+      { v: pad2(cd.value.h),  u:'時', bg:'#F6D27A' },
+      { v: pad2(cd.value.m),  u:'分', bg:'#A8D3E6' },
+      { v: pad2(cd.value.s),  u:'秒', bg:'#B9DAA5' },
+    ]);
+
+    /* ---------- Toast ---------- */
+    const toast = ref('');
+    let toastTimer;
+    function showToast(msg) { toast.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.value = '', 1800); }
+
+    /* ---------- Banner：抓圖片底色延伸成整頁背景 ---------- */
+    const bannerImg = ref(null);
+    const bannerError = ref(false);
+    const bannerSrc = ref('banner.svg');
+    const onBannerError = () => { if (bannerSrc.value === 'banner.svg') bannerSrc.value = 'banner.png'; else bannerError.value = true; };
+    function onBannerLoad() {
+      try {
+        const img = bannerImg.value;
+        const c = document.createElement('canvas');
+        c.width = 96; c.height = 20;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const d = ctx.getImageData(0, 0, c.width, c.height).data;
+        const buckets = {};
+        for (let i = 0; i < d.length; i += 4) {
+          const key = (d[i] >> 4) + ',' + (d[i+1] >> 4) + ',' + (d[i+2] >> 4);
+          const b = buckets[key] ||= { n:0, r:0, g:0, b:0 };
+          b.n++; b.r += d[i]; b.g += d[i+1]; b.b += d[i+2];
+        }
+        const top = Object.values(buckets).sort((a, b) => b.n - a.n)[0];
+        const rgb = `rgb(${Math.round(top.r/top.n)}, ${Math.round(top.g/top.n)}, ${Math.round(top.b/top.n)})`;
+        document.documentElement.style.setProperty('--bg', rgb);
+        document.querySelector('meta[name=theme-color]').setAttribute('content', rgb);
+      } catch (e) { /* 本機 file:// 開啟時可能無法讀取，維持預設淡黃 */ }
+    }
+
+    /* FAB 在桌機版時貼齊 480px 容器右側 */
+    const fabRight = ref('20px');
+    const updateFab = () => { const w = window.innerWidth; fabRight.value = w > 480 ? `${(w - 480) / 2 + 20}px` : '20px'; };
+
+    onMounted(() => {
+      loadFx();
+      updateFab(); window.addEventListener('resize', updateFab);
+      nextTick(initSortable);
+    });
+
+    return {
+      DATES, CATS, EXP_CATS, CAT_STYLE, EXP_STYLE, EMERGENCY, TIPS, icon,
+      tabs, tab, switchTab,
+      curDate, selectDate, weekday, dayNum, md, fmtFull, nights, hotelTonight,
+      catFilter, visibleItems, hasHours, flightOf, segments, cycleMode, listEl,
+      openNaver, curWeather, outfit, resetDay, cd, cdBoxes, sunriseInfo, regionOf, openMatjip, nearbyMatjip, locating, openCatchtable, NEARBY, NEAR_ME, searchNearMe, areaOf, openNearby,
+      fx, fxUnit, fxResult, fxQuick, krwToTwd,
+      shopping, expenses, info, totalKRW, sumBy, catSum, expenseGroups,
+      sheet, form, sheetTitle, confirmDelete, openSheet, closeSheet, editItem, onFab,
+      saveItem, saveShop, saveExpense, saveInfo, doDelete, onPhoto,
+      toast, bannerImg, bannerError, bannerSrc, onBannerError, onBannerLoad, fabRight,
+    };
+  },
+}).mount('#app');
+</script>
+</body>
+</html>
